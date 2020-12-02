@@ -23,6 +23,7 @@ from .config import (
     OPT_IGNORE_RC,
     OPT_WATCHERS,
     OPT_NAME,
+    OPT_DISPLAY_NAME,
     OPT_STATUS_COMMAND,
     OPT_MQTT_TOPIC,
     OPT_MQTT_OUTPUT,
@@ -51,8 +52,15 @@ class CommandSensor(Sensor):
     """Command sensor."""
 
     def __init__(self, opts, command, config):
+        name = opts[OPT_NAME]  # required
+        if opts[OPT_MQTT_TOPIC] == "":
+            opts[OPT_MQTT_TOPIC] = name  # default to name
         super().__init__(opts, config)
-        self.name = opts[OPT_NAME]
+
+        self.name = name
+        self.display_name = opts.get(OPT_DISPLAY_NAME)
+        if not self.display_name:
+            self.display_name = name  # default to name
         self.service_status = None
         self.force_refresh = False
 
@@ -109,6 +117,7 @@ class CommandSensor(Sensor):
                     "host": config.hostname,
                     "section": self.mqtt_topic_prefix,
                     "topic": self.mqtt_topic,
+                    "display_name": self.display_name,
                     **self._attributes,
                 }
                 if status_json:
@@ -132,14 +141,12 @@ class CommandSensor(Sensor):
     def get_mqtt_discovery_config(self, device_name, device_id, device_data):
         """Command sensor Home Assistant MQTT discovery config."""
         discovery = self._discovery if self._discovery is not None else {}
-        topic_prefix = self.mqtt_topic_prefix if self.mqtt_topic_prefix else ""
-        topic_prefix_slug = slugify(topic_prefix) if topic_prefix else ""
         name = self.name
-        name_prefix = (topic_prefix + " " if topic_prefix else "") + name
         name_slug = slugify(name)
-        name_prefix_slug = (
-            topic_prefix_slug + "_" if topic_prefix_slug else ""
-        ) + name_slug
+        topic_prefix = self.mqtt_topic_prefix + " " if self.mqtt_topic_prefix else ""
+        topic_prefix_slug = slugify(topic_prefix) + ("_" if topic_prefix else "")
+        display_name = self.display_name
+
         entity_type = DEF_DISCOVERY_ENTITY_TYPE
         if OPT_ENTITY_TYPE in discovery:
             entity_type = discovery[OPT_ENTITY_TYPE]
@@ -152,8 +159,8 @@ class CommandSensor(Sensor):
 
         entity_data = {
             **device_data,
-            "unique_id": device_id + "_" + name_prefix_slug,
-            "name": device_name + " " + name_prefix,
+            "unique_id": device_id + "_" + topic_prefix_slug + name_slug,
+            "name": device_name + " " + topic_prefix + display_name,
             "state_topic": self.get_topic(),
         }
 
@@ -193,8 +200,6 @@ def create_command_sensors(
         ):
             merge(service_opts, service, limit=0)
             inherit_opts(service_opts, base_opts)
-            if service_opts[OPT_MQTT_TOPIC] == "":
-                service_opts[OPT_MQTT_TOPIC] = service_opts[OPT_NAME]
             if not service_opts[OPT_STATUS_COMMAND]:
                 _LOGGER.error(
                     'required option "%s" missing in "%s"',

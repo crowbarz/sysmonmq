@@ -25,7 +25,7 @@ from .globals import (
 )
 from .options import parse_opts
 from .mqtt import mqtt_close, mqtt_connect, mqtt_is_connected
-from .action import subscribe_actions
+from .action import send_mqtt_discovery, subscribe_actions
 from .sensor import schedule_refresh_all_sensors, update_sensors
 from .debug import is_debug_level
 
@@ -119,8 +119,9 @@ def main():
             if SysMonMQ.event.is_set():
                 rc = handle_events(config)
                 if rc is True:  ## Connect event
-                    config.force_check = True
-                    schedule_refresh_all_sensors(config)
+                    send_mqtt_discovery(config)  ## will trigger sensor refresh
+                    # config.force_check = True
+                    # schedule_refresh_all_sensors(config)
                 elif rc is False:  ## Disconnect event
                     pass
                 elif rc is None:  ## Error

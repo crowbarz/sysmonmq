@@ -42,8 +42,9 @@ class SysMonMQ:
         self.actions = []
         self.watchers = []
 
-        ##
-        self.opts = None  ## global options
+        ## Globals
+        self.opts = None  ## top level options
+        self.discovery_opts = None  ## top level MQTT discovery options
         self.refresh_interval = None  ## global refresh interval
         self.force_check = False  ## force check on next refresh
         self.mqtt_debug = False  ## Enable MQTT debugging

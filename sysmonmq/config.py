@@ -97,6 +97,7 @@ OPT_JSON_PAYLOAD = "json_payload"
 OPT_ATTRIBUTES = "attributes"
 
 OPT_NAME = "name"
+OPT_DISPLAY_NAME = "display_name"
 OPT_COMMAND = "command"
 OPT_STATUS_COMMAND = "status_command"
 OPT_MQTT_TOPIC_PREFIX = "mqtt_topic_prefix"
@@ -332,6 +333,7 @@ COMMAND_SENSORS_OPTS_DEF = {
 
 COMMAND_SENSOR_OPTS_DEF = {
     OPT_NAME: "",
+    OPT_DISPLAY_NAME: None,  ## default to name
     OPT_MQTT_TOPIC: "",  ## default to name
     OPT_STATUS_COMMAND: None,
     OPT_COMMAND_TIMEOUT: None,  # inherit

@@ -17,7 +17,8 @@ from .config import (
     OPT_MQTT_ERROR,
     OPT_MQTT_OUTPUT,
     OPT_MQTT_PREFIX,
-    OPT_MQTT_PREFIX_HOST, OPT_REFRESH_INTERVAL,
+    OPT_MQTT_PREFIX_HOST,
+    OPT_REFRESH_INTERVAL,
     OPT_STATUS,
     OPT_SYSTEM_SENSORS,
     OPT_MONITORED_SERVICES,
@@ -154,9 +155,9 @@ def parse_opts(config):  # -> top_opts
     mqtt_opts = mqtt_setup(opts.get(OPT_MQTT), top_opts, config)
     if mqtt_opts:
         top_opts[OPT_MQTT] = mqtt_opts
-        discovery_opts = mqtt_opts.get(OPT_DISCOVERY)
+        config.discovery_opts = mqtt_opts.get(OPT_DISCOVERY)
         status_opts = mqtt_opts[OPT_STATUS]
-        status_actions = setup_discovery_status(discovery_opts, status_opts, config)
+        status_actions = setup_discovery_status(status_opts, config)
         if status_actions:
             config.actions += status_actions
     else:

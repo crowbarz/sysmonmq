@@ -14,7 +14,6 @@ from .config import (
     OPT_MQTT_ERROR,
     OPT_MQTT_OUTPUT,
     OPT_MQTT_PREFIX,
-    OPT_MQTT_TOPIC_PREFIX,
     OPT_REFRESH_INTERVAL,
     OPT_SYSTEM_SENSORS,
     OPT_CPU_LOAD_AVERAGE,
@@ -28,7 +27,6 @@ from .config import (
     OPT_TEMP_SENSOR_FILE,
     OPT_MQTT_TOPIC,
     OPT_MQTT_QOS,
-    OPT_MQTT_RETAIN,
     OPT_TOPIC,
     OPT_PAYLOAD,
     OPT_QOS,
@@ -166,7 +164,8 @@ class MQTTClientSensor(Sensor):
         if self.mqtt_topic is None:  ## no
             return None
 
-        entity_slug = "system_status"
+        entity_name = "System Status"
+        entity_slug = slugify(entity_name)
         birth_msg = self._client_opts[OPT_BIRTH]
         birth_topic = self.get_topic(birth_msg[OPT_TOPIC], birth_msg[OPT_MQTT_PREFIX])
         close_msg = self._client_opts[OPT_CLOSE]
@@ -175,7 +174,7 @@ class MQTTClientSensor(Sensor):
                 entity_slug: {
                     **device_data,
                     "unique_id": device_id + "_" + entity_slug,
-                    "name": device_name + " " + entity_slug,
+                    "name": device_name + " " + entity_name,
                     "state_topic": birth_topic,
                     "device_class": "connectivity",
                     "payload_on": birth_msg[OPT_PAYLOAD],
@@ -220,9 +219,13 @@ class CPULoadAverageSensor(Sensor):
         """CPU load average sensor Home Assistant MQTT discovery config."""
         cpu_load_icon = "mdi:chart-line"
         cpu_load_unit_of_measurement = "load"
-        load_1m_slug = "cpu_load_1m"
-        load_5m_slug = "cpu_load_5m"
-        load_15m_slug = "cpu_load_15m"
+
+        load_1m_name = "CPU Load (1m)"
+        load_5m_name = "CPU Load (5m)"
+        load_15m_name = "CPU Load (15m)"
+        load_1m_slug = slugify(load_1m_name)
+        load_5m_slug = slugify(load_5m_name)
+        load_15m_slug = slugify(load_15m_name)
         topic = self.get_topic()
         return {
             "sensor": {
@@ -230,7 +233,7 @@ class CPULoadAverageSensor(Sensor):
                     **device_data,
                     "unique_id": device_id + "_" + load_1m_slug,
                     "icon": cpu_load_icon,
-                    "name": device_name + " " + load_1m_slug,
+                    "name": device_name + " " + load_1m_name,
                     "state_topic": topic,
                     "unit_of_measurement": cpu_load_unit_of_measurement,
                     "value_template": "{{ value_json." + load_1m_slug + "}}",
@@ -239,7 +242,7 @@ class CPULoadAverageSensor(Sensor):
                     **device_data,
                     "unique_id": device_id + "_" + load_5m_slug,
                     "icon": cpu_load_icon,
-                    "name": device_name + " " + load_5m_slug,
+                    "name": device_name + " " + load_5m_name,
                     "state_topic": topic,
                     "unit_of_measurement": cpu_load_unit_of_measurement,
                     "value_template": "{{ value_json." + load_5m_slug + "}}",
@@ -248,7 +251,7 @@ class CPULoadAverageSensor(Sensor):
                     **device_data,
                     "unique_id": device_id + "_" + load_15m_slug,
                     "icon": cpu_load_icon,
-                    "name": device_name + " " + load_15m_slug,
+                    "name": device_name + " " + load_15m_name,
                     "state_topic": topic,
                     "unit_of_measurement": cpu_load_unit_of_measurement,
                     "value_template": "{{ value_json." + load_15m_slug + "}}",
@@ -283,7 +286,8 @@ class MemoryUsageSensor(Sensor):
 
     def get_mqtt_discovery_config(self, device_name, device_id, device_data):
         """Memory usage sensor Home Assistant MQTT discovery config."""
-        entity_slug = "memory_usage"
+        entity_name = "Memory Usage"
+        entity_slug = slugify(entity_name)
         entity_icon = "mdi:memory"
         entity_unit_of_measurement = "% memory"
         return {
@@ -292,7 +296,7 @@ class MemoryUsageSensor(Sensor):
                     **device_data,
                     "unique_id": device_id + "_" + entity_slug,
                     "icon": entity_icon,
-                    "name": device_name + " " + entity_slug,
+                    "name": device_name + " " + entity_name,
                     "state_topic": self.get_topic(),
                     "json_attributes_topic": self.get_topic(),
                     "unit_of_measurement": entity_unit_of_measurement,
@@ -346,7 +350,8 @@ class DiskUsageSensor(Sensor):
 
     def get_mqtt_discovery_config(self, device_name, device_id, device_data):
         """Disk usage sensor Home Assistant MQTT discovery config."""
-        entity_slug = "disk_usage_root"
+        entity_name = "Disk Usage (root)"
+        entity_slug = slugify(entity_name)
         entity_icon = "mdi:harddisk"
         entity_unit_of_measurement = "% disk"
         return {
@@ -355,7 +360,7 @@ class DiskUsageSensor(Sensor):
                     **device_data,
                     "unique_id": device_id + "_" + entity_slug,
                     "icon": entity_icon,
-                    "name": device_name + " " + entity_slug,
+                    "name": device_name + " " + entity_name,
                     "state_topic": self.get_topic(),
                     "json_attributes_topic": self.get_topic(),
                     "unit_of_measurement": entity_unit_of_measurement,

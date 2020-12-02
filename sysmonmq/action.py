@@ -71,15 +71,13 @@ class Action(Monitor):
 class DiscoveryStatusAction(Action):
     """Action that monitors the MQTT discovery status topic."""
 
-    def __init__(self, discovery_opts, status_opts, config: SysMonMQ):
+    def __init__(self, status_opts, config: SysMonMQ):
         # super().__init__(opts, config)
         if is_debug_level(8):
             _LOGGER.debug(
-                type(self).__name__ + "(discovery_opts=%s, status_opts=%s)",
-                discovery_opts,
+                type(self).__name__ + "(status_opts=%s)",
                 status_opts,
             )
-        self.discovery_opts = discovery_opts
         self.mqtt_topic = status_opts[OPT_TOPIC]
         self.mqtt_qos = status_opts[OPT_QOS]
         self.mqtt_prefix = ""
@@ -95,10 +93,7 @@ class DiscoveryStatusAction(Action):
         if is_debug_level(4):
             _LOGGER.debug("DiscoveryStatusAction: topic=%s, payload=%s", topic, payload)
         if payload == self.payload_available:
-            for sensor in config.sensors:
-                sensor.publish_mqtt_discovery(self.discovery_opts)
-            schedule_refresh_all_sensors(config, DEF_MQTT_DISCOVERY_UPDATE_DELAY)
-            config.force_check = True
+            send_mqtt_discovery(config)
 
 
 class CommandAction(Action):
@@ -309,13 +304,11 @@ def setup_actions_list(opts, top_opts, config):  # -> err(boolean)
     return (action_objs, actions_list_opts) if not err else (None, None)
 
 
-def setup_discovery_status(
-    discovery_opts, status_opts, config: SysMonMQ
-) -> List[Action]:
+def setup_discovery_status(status_opts, config: SysMonMQ) -> List[Action]:
     """Create MQTT discovery status action."""
-    if discovery_opts is None or status_opts is None:
+    if config.discovery_opts is None or status_opts is None:
         return None
-    return [DiscoveryStatusAction(discovery_opts, status_opts, config)]
+    return [DiscoveryStatusAction(status_opts, config)]
 
 
 def subscribe_actions(actions_list):  # -> bool
@@ -331,3 +324,12 @@ def subscribe_actions(actions_list):  # -> bool
     if subs:
         _LOGGER.debug("subscribing to MQTT topics: %s", subs)
         return mqtt_subscribe(subs)
+
+
+def send_mqtt_discovery(config):
+    """Publish MQTT discovery options and schedule refresh of all sensors."""
+    discovery_opts = config.discovery_opts
+    for sensor in config.sensors:
+        sensor.publish_mqtt_discovery(discovery_opts)
+    schedule_refresh_all_sensors(config, DEF_MQTT_DISCOVERY_UPDATE_DELAY)
+    config.force_check = True
