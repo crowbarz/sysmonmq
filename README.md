@@ -10,6 +10,12 @@ Daemon that monitors status of system metrics, services and containers, and exec
 * Supports customisable sensors that runs a script or command periodically.
 * Supports Home Assistant MQTT discovery auto-configuration for configured monitors.
 
+## Configuration
+
+See the sample `sysmonmq.yaml` for a description of the available configuration options.
+
+The `--dump-config` option will also show the full configuration with all inherited attributes.
+
 ## Usage
 
 ```
@@ -24,5 +30,3 @@ optional arguments:
                         set config file location
   -v, --version         show application version
   ```
-
-  Use `--dump-config` to show all inherited configuration.
