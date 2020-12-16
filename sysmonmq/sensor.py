@@ -161,7 +161,7 @@ class MQTTClientSensor(Sensor):
 
     def get_mqtt_discovery_config(self, device_name, device_id, device_data):
         """System status Home Assistant MQTT discovery config."""
-        if self.mqtt_topic is None:  ## no
+        if self.mqtt_topic is None:
             return None
 
         entity_name = "System Status"
@@ -172,7 +172,7 @@ class MQTTClientSensor(Sensor):
         return {
             "binary_sensor": {
                 entity_slug: {
-                    **device_data,
+                    "device": device_data["device"],  ## exclude availability
                     "unique_id": device_id + "_" + entity_slug,
                     "name": device_name + " " + entity_name,
                     "state_topic": birth_topic,

@@ -1,0 +1,351 @@
+## sysmonmq.yaml - config file for SysMonMQ
+##
+## Config file location: configurable using --config the command line
+## (can be specified multiple times)
+# config: 
+#   - /etc/sysmonmq.yaml
+#   - /etc/sysmonmq-host.yaml
+
+## Global defaults for monitors and actions
+# refresh_interval: 300
+# command_timeout: 10
+
+## MQTT broker connection parameters
+mqtt:
+  host: "mqtt"
+  port: 8883 # use 1883 for unencrypted MQTT
+  username: "username"
+  password: "password"
+  # client_id: "" # randomly generate
+  # clean_session: true
+  # keepalive: 60
+  # reconnect_delay_min: 1
+  # reconnect_delay_max: 120
+  enable_ssl: true
+
+  ## MQTT client birth/close/will messages. If not specified, then no birth,
+  ## close and will messages will be sent.
+  client:
+    # topic: "client"
+    # qos: 1
+    # retain: true
+    # birth:
+    #   payload: "online"
+    #   qos: 1
+    #   retain: true
+    #   refresh_interval: 55
+    # close:
+    #   payload: "offline"
+    #   qos: 1
+    #   retain: true
+    # will:
+    #   payload: "offline"
+    #   qos: 1
+    #   retain: true
+
+    ## These settings are used to override global settings for application
+    ## level output and error messages.
+    # mqtt_output:
+    # mqtt_error:
+
+  ## MQTT discovery configuration. Set to enable MQTT discovery messages to be
+  ## sent to configure all monitors in Home Assistant.
+  # discovery:
+  #   topic: "homeassistant"
+  #   qos: 1
+  #   retain: false
+
+  ## Home Assistant status topic. Subscribed to listen for server restarts.
+  # status:
+  #   topic: "homeassistant/status"
+  #   payload_available: "online"
+  #   qos: 2
+
+## Prefix for topic for all MQTT messages. Set mqtt_prefix_host to include the
+## current hostname as a topic level in the prefix.
+# mqtt_prefix: "sysmonmq"
+# mqtt_prefix_host: false
+
+## Specify if output and errors should be logged to MQTT as well as the
+## console, for actions and monitors that support this functionality. Can be
+## overridden in more specific config sections.
+##
+## The topic for output and errors is generated as follows:
+##
+## {mqtt_prefix}/[{mqtt_output.mqtt_topic_prefix}/][{mqtt_topic_prefix}/]{mqtt_topic}[/{mqtt_output.mqtt_topic_suffix}]
+## {mqtt_prefix}/[{mqtt_error.mqtt_topic_prefix}/][{mqtt_topic_prefix}/]{mqtt_topic}[/{mqtt_error.mqtt_topic_suffix}]
+##
+# mqtt_output:
+#   mqtt_topic_prefix: "output"
+#   mqtt_topic_suffix: ""
+#   mqtt_qos: 1
+#   mqtt_retain: false
+#   mqtt_ignore_rc: false
+
+# mqtt_error:
+#   mqtt_topic_prefix: "error"
+#   mqtt_topic_suffix: ""
+#   mqtt_qos: 1
+#   mqtt_retain: false
+#   mqtt_output_on_error: false
+
+## System sensors. Send updates to system metrics via MQTT topics.
+system_sensors:
+
+  ## Enable MQTT load average messages with 1m, 5m and 15m average load as
+  ## computed by the underlying system. If enabled, all average load values are
+  ## sent to the following topic as a JSON formatted message:
+  ##
+  ## mqtt_prefix/system_sensors/cpu_load_average
+  ## 
+  ## Set mqtt_load_average_format to change the format of the sensor values in
+  ## the MQTT message.
+  cpu_load_average:
+    # load_file: "/proc/loadavg"
+    # load_format: "%.2f"
+    # mqtt_topic: "load_average"
+    # mqtt_qos: 1
+    # mqtt_retain: false
+
+  ## Enable MQTT memory usage messages with memory metrics as reported by the
+  ## underlying operating system. If enabled, all memory metrics are sent to
+  ## the following topic as a JSON formatted message:
+  ##
+  ## mqtt_prefix/system_sensors/memory_usage
+  ##
+  memory_usage:
+    refresh_interval: 1800
+    # usage_file: "/proc/meminfo"
+    # mqtt_topic: "memory_usage"
+    # mqtt_qos: 1
+    # mqtt_retain: false
+
+  ## Enable MQTT disk usage messages with total, used and available 1K blocks as
+  ## reported by the underlying system. If enabled, disk metrics for all local
+  ## filesystems (except tmpfs and devtmpfs) are sent to the following topic
+  ## as a JSON formatted dict with the filesystem mount point as the key:
+  disk_usage:
+    refresh_interval: 1800
+    # usage_command: "df -m -l -x tmpfs -x devtmpfs"
+    # command_timeout: 60
+    # mqtt_topic: "disk_usage"
+    # mqtt_qos: 1
+    # mqtt_retain: false
+
+  ## Enable MQTT system temperature topic. Returns the operating system reported
+  ## CPU temperature. Only sends MQTT messages when the temperature changes from
+  ## the previously reported value, or when the global refresh_interval has
+  ## elapsed. Not useful on virtual machines as they don't report temperature.
+  # temperature:
+    # refresh_interval: 1800
+    # temp_sensor_file: "/sys/class/thermal/thermal_zone0/temp"
+    # mqtt_topic: "temperature"
+    # mqtt_qos: 1
+    # mqtt_retain: false
+
+## Systemd service status monitors. Returns the systemd unit state for each
+## service. Defaults can be specified for all services and also overridden on a
+## per-service basis. Only sends messages when the service status changes from
+## the previous value, or when the global refresh_interval has elapsed.
+## Messages for each service are sent to the topic:
+##
+## {mqtt_prefix}/[{mqtt_topic_prefix}/]{service}
+##
+## If json_payload is set, then send MQTT message as JSON. If the output of
+## status_command parses as a JSON object, then use that output, otherwise
+## the output is sent as property "status".
+monitored_services:
+  # refresh_interval: 300 # inherited
+  # command_timeout: 10 # inherited
+  # ignore_rc: true ## ignore return code from command
+  # format_command: true ## perform variable substitution on status_command
+  # json_payload: true
+  # status_command: "/bin/systemctl is-active {service}"
+  # mqtt_topic_prefix: "service"
+  # mqtt_qos: 1
+  # mqtt_retain: false
+
+  ## Extra attributes added to every status update message. Requires
+  ## json_payload to be enabled.
+  # attributes:
+  #   service_specific_attribute: "data"
+  #   ...
+
+  ## MQTT discovery options that determine the configuration sent for each
+  ## service to Home Assistant. Service specific options can override these
+  ## group-level defaults.
+  ##
+  ## MQTT discovery documentation: https://www.home-assistant.io/docs/mqtt/discovery/
+  ##
+  # discovery:
+  #   entity_type: "binary_sensor"
+  #   config_inherit:
+  #     device_class: problem
+  #     payload_on: "True" # NOTE: YAML special values must be quoted 
+  #     payload_off: "False"
+  #     value_template: "{{ value_json.status != 'active' }}"
+
+  ## Service definitions. 
+  # services:
+  #   - name: "sshd"
+  #     display_name: "SSH Daemon" # defaults to name
+  #     mqtt_topic: "sshd" # defaults to name
+  #     status_command: "sshd_health_check" # inherited
+  #     mqtt_qos: 1 # inherited
+  #     mqtt_retain: false # inherited
+  #     refresh_interval: 300 # inherited
+  #     command_timeout: 10 # inherited
+  #     ignore_rc: true # inherited
+  #     format_command: true # inherited
+  #     json_payload: true # inherited
+  #     discovery:
+  #       ... # service specific MQTT discovery config overrides
+  #     attributes:
+  #       ... # service specific extra MQTT payload attributes
+
+  ## Watchers can be set to trigger status updates for all configured services.
+  ## Command watchers spawn a command and watches its standard output for
+  ## specified keywords. File watchers will watch for specified keywords
+  ## appearing in log files. The file watcher will also watch for parent
+  ## directory file creation and deletion events if the file does not exist
+  ## when the watcher is started, restarting after restart_delay if this occurs.
+  watchers:
+    trigger_delay: 2
+    restart_delay: 3
+    files:
+      - /var/log/daemon.log
+    # commands:
+    #   - "/opt/app/monitor_script"
+    keywords:
+      - Stopping
+      - Starting
+
+## Container status monitors. Returns the Docker container state for each
+## container. Configured identially to monitored_services except the list of
+## containers is specified under key containers. Messages for each container
+## are sent to the topic:
+##
+## {mqtt_prefix}/[{mqtt_topic_prefix}/]{container}
+##
+monitored_containers:
+  # refresh_interval: 300 # inherited
+  # command_timeout: 10 # inherited
+  # ignore_rc: true ## ignore return code from command
+  # format_command: true ## perform variable substitution on status_command
+  # json_payload: true
+  # status_command: "docker inspect -f '{{.State.Status}}'"
+  # mqtt_topic_prefix: "container"
+  # mqtt_qos: 1
+  # mqtt_retain: false
+  # attributes:
+  #   service_specific_attribute: "data"
+  #   ...
+  # discovery:
+  #   entity_type: "binary_sensor"
+  #   config_inherit:
+  #     device_class: problem
+  #     payload_on: "True" # NOTE: YAML special values must be quoted 
+  #     payload_off: "False"
+  #     value_template: "{{ value_json.status != 'active' }}"
+
+  ## Container definitions.
+  #   - name: "zoneminder"
+  #     mqtt_topic: "zoneminder"
+  #     display_name: "Zoneminder" # defaults to name
+  #     mqtt_topic: "zoneminder" # defaults to name
+  #     mqtt_qos: 1 # inherited
+  #     mqtt_retain: false # inherited
+  #     refresh_interval: 300 # inherited
+  #     command_timeout: 10 # inherited
+  #     ignore_rc: true # inherited
+  #     format_command: true # inherited
+  #     json_payload: true # inherited
+  #     discovery:
+  #       ... # service specific MQTT discovery config overrides
+  #     attributes:
+  #       ... # service specific extra MQTT payload attributes
+
+  ## Watchers definition. See monitored_services section for details.
+  ## NOTE: currently it is not possible to watch the same file in more than
+  ##       one watcher, across monitored_services, monitored_containers and
+  ##       monitored_commands. One workaround is to use a command watcher to
+  ##       tail -f the file.
+  watchers:
+    trigger_delay: 5
+    restart_delay: 30
+    commands:
+      - "docker events -f 'type=container' -f 'event=create' -f 'event=die' -f 'event=restart' -f 'event=start' -f 'event=stop'"
+
+## Actions definitions. Execute a script or command when a message is received
+## on a subscribed topic. Send MQTT message with output if mqtt_output is
+## specified, and errors if mqtt_error is specified in this section or
+## globally. For each action, the following topic is subscribed:
+##
+## {mqtt_prefix}/[{mqtt_topic_prefix}/]{action}
+##
+## Output is sent as a JSON encoded object containing keys: command, output and
+## rc to the following topic:
+##
+## {mqtt_prefix}/[{mqtt_output.mqtt_topic_prefix}/][{mqtt_topic_prefix}/]{mqtt_topic}[/{mqtt_output.mqtt_topic_suffix}]
+
+actions_list:
+  # command_timeout: 10 # inherited
+  # mqtt_topic_prefix: action
+  # mqtt_qos: 1 # inherited
+  # append_payload: false ## add MQTT payload as argument(s) on command line
+  # format_command: false ## perform variable substitution on status_command
+  # ignore_rc: false
+
+  mqtt_output: # inherited
+  #   mqtt_topic_prefix: "output"
+  #   mqtt_topic_suffix: ""
+  #   mqtt_qos: 1
+  #   mqtt_retain: false
+
+  mqtt_error: # inherited
+  #   mqtt_topic_prefix: "output"
+  #   mqtt_topic_suffix: ""
+  #   mqtt_qos: 1
+  #   mqtt_retain: false
+  #   mqtt_retain: false
+  #   mqtt_output_on_error: false
+
+  ## Actions definitions.
+  ##
+  ## Set payload_match to only execute the action if a specific MQTT payload
+  ## is received. If this is defined as a string, then command is executed on
+  ## the MQTT payload matches the string. If it is defined instead as a dict,
+  ## then the MQTT payload is matched to each key and the commands specified
+  ## as the value if thre is a match.
+  actions:
+    - name: "system/restart"
+      command: "sudo shutdown -r now"
+      # command_timeout: 10 # inherited
+      # append_payload: false # inherited
+      # format_command: false # inherited
+      # mqtt_qos: 1 # inherited
+      # ignore_rc: false
+  #   - name: "log-test"
+  #     command: "sh -c 'echo $(date) >> /tmp/test.log'"
+  #     command_timeout: 10
+  #     mqtt_topic: "log-test"
+  #     mqtt_qos: 1
+  #     ignore_rc: false
+  #   - name: "service/echo"
+  #     command: "echo {payload}"
+  #     format_command: true
+  #   - name: "service/echo-true"
+  #     command: "echo true"
+  #     payload_match: "true"
+  #   - name: "service/restart"
+  #     command: "sudo systemctl restart {payload}"
+  #     format_command: true
+  #     payload_match:
+  #       - zoneminder
+  #       - dnsmasq
+  #   - name: "service/restart_alt"
+  #     format_command: true
+  #     payload_match:
+  #       zoneminder: "sudo systemctl restart zoneminder"
+  #       dnsmasq: "sudo systemctl restart dnsmasq"
+  #       ~: "sh -c 'echo Unknown payload {payload} > /tmp/action.log ; exit 1'"

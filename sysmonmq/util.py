@@ -56,7 +56,7 @@ def merge(
                     if a[key] is None or type(a[key]) is not list:
                         a[key] = []  # force a[key] to be a list
                     if replace_lists:
-                        a[key] = list(b[key])  # replace a[key] with copy of b[key]
+                        a[key] = b[key][:]  # replace a[key] with shallow copy of b[key]
                     else:
                         a[key].extend(b[key])  # append b[key] to a[key]
                 else:

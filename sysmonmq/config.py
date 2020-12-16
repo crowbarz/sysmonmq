@@ -430,9 +430,10 @@ MONITORED_COMMANDS_OPTS_DEF = {
     OPT_JSON_PAYLOAD: False,
     OPT_DISCOVERY: {
         OPT_ENTITY_TYPE: "sensor",
-        OPT_CONFIG_INHERIT: {
-            "icon": DEF_DISCOVERY_ICON,
-        },
+        ## 20201215 removed icon default as binary_sensor doesn't support icons
+        # OPT_CONFIG_INHERIT: {
+        #     "icon": DEF_DISCOVERY_ICON,
+        # },
     },
 }
 MONITORED_COMMANDS_OPTS_SUB = {

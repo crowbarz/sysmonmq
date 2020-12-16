@@ -77,7 +77,9 @@ class CommandSensor(Sensor):
         command = self._command
         if self._format_command:
             try:
-                command = self._command.format(service=self.name, container=self.name)
+                command = self._command.format(
+                    service=self.name, container=self.name, command=self.name
+                )
             except Exception as e:
                 self.publish_error(f'Could not format command for "{self.name}', str(e))
                 return
