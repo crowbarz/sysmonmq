@@ -10,6 +10,12 @@ Daemon that monitors status of system metrics, services and containers, and exec
 * Supports customisable sensors that runs a script or command periodically.
 * Supports Home Assistant MQTT discovery auto-configuration for configured monitors.
 
+## Installation
+
+```bash
+$ pip install sysmonmq
+```
+
 ## Configuration
 
 See the sample `sysmonmq.yaml` for a description of the available configuration options.
