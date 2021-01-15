@@ -161,7 +161,8 @@ def parse_opts(config):  # -> top_opts
         if status_actions:
             config.actions += status_actions
     else:
-        err = True
+        ## Errors in MQTT section halt further options processing
+        return None
 
     ## Parse subsystem options
     if OPT_SYSTEM_SENSORS in opts:

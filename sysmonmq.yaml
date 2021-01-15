@@ -80,14 +80,12 @@ mqtt:
 #   mqtt_topic_suffix: ""
 #   mqtt_qos: 1
 #   mqtt_retain: false
-#   mqtt_ignore_rc: false
 
 # mqtt_error:
 #   mqtt_topic_prefix: "error"
 #   mqtt_topic_suffix: ""
 #   mqtt_qos: 1
 #   mqtt_retain: false
-#   mqtt_output_on_error: false
 
 ## System sensors. Send updates to system metrics via MQTT topics.
 system_sensors:
@@ -307,8 +305,6 @@ actions_list:
   #   mqtt_topic_suffix: ""
   #   mqtt_qos: 1
   #   mqtt_retain: false
-  #   mqtt_retain: false
-  #   mqtt_output_on_error: false
 
   ## Actions definitions.
   ##

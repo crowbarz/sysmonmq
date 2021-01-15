@@ -62,7 +62,7 @@ OPT_STATUS = "status"
 OPT_PAYLOAD_AVAILABLE = "payload_available"
 
 OPT_MQTT_PAYLOAD = "mqtt_payload"
-OPT_MQTT_OUTPUT_ON_ERROR = "output_on_error"
+# OPT_MQTT_OUTPUT_ON_ERROR = "output_on_error"
 
 OPT_MQTT_PREFIX = "mqtt_prefix"
 OPT_MQTT_PREFIX_HOST = "mqtt_prefix_host"
@@ -125,14 +125,16 @@ TOP_OPTS_DEF = {
         OPT_MQTT_TOPIC_SUFFIX: None,
         OPT_MQTT_QOS: DEF_MQTT_QOS,
         OPT_MQTT_RETAIN: DEF_MQTT_RETAIN,
-        OPT_IGNORE_RC: False,
+        # 20210114 DEPRECATED: unimplemented
+        # OPT_IGNORE_RC: False,
     },
     OPT_MQTT_ERROR: {
         OPT_MQTT_TOPIC_PREFIX: "error",
         OPT_MQTT_TOPIC_SUFFIX: None,
         OPT_MQTT_QOS: DEF_MQTT_QOS,
         OPT_MQTT_RETAIN: DEF_MQTT_RETAIN,
-        OPT_MQTT_OUTPUT_ON_ERROR: False,
+        # 20210114 DEPRECATED: unimplemented
+        # OPT_MQTT_OUTPUT_ON_ERROR: False,
     },
 }
 TOP_OPTS_SUB = {
@@ -232,7 +234,7 @@ MQTT_OUTPUT_OPTS_DEF = {
     OPT_MQTT_TOPIC_SUFFIX: None,  # inherit
     OPT_MQTT_QOS: None,  # inherit
     OPT_MQTT_RETAIN: None,  # inherit
-    OPT_IGNORE_RC: None,  # inherit
+    # OPT_IGNORE_RC: None,  # inherit
 }
 MQTT_OUTPUT_OPTS_ALL = MQTT_OUTPUT_OPTS_DEF.keys()
 
@@ -241,7 +243,7 @@ MQTT_ERROR_OPTS_DEF = {
     OPT_MQTT_TOPIC_SUFFIX: None,  # inherit
     OPT_MQTT_QOS: None,  # inherit
     OPT_MQTT_RETAIN: None,  # inherit
-    OPT_MQTT_OUTPUT_ON_ERROR: None,  # inherit
+    # OPT_MQTT_OUTPUT_ON_ERROR: None,  # inherit
 }
 MQTT_ERROR_OPTS_ALL = MQTT_ERROR_OPTS_DEF.keys()
 
@@ -455,12 +457,12 @@ ACTIONS_LIST_OPTS_DEF = {
     OPT_MQTT_QOS: DEF_MQTT_SUBSCRIBE_QOS,  # subscribe default
     OPT_APPEND_PAYLOAD: False,
     OPT_FORMAT_COMMAND: False,
+    OPT_IGNORE_RC: False,
 }
 ACTIONS_LIST_OPTS_SUB = {
     OPT_ACTIONS: None,
     OPT_MQTT_OUTPUT: None,
     OPT_MQTT_ERROR: None,
-    OPT_IGNORE_RC: False,
 }
 ACTIONS_LIST_OPTS_ALL = {**ACTIONS_LIST_OPTS_DEF, **ACTIONS_LIST_OPTS_SUB}.keys()
 

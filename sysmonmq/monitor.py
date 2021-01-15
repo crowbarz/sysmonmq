@@ -7,7 +7,6 @@ from .const import APP_NAME, DEF_COMMAND_TIMEOUT
 from .config import (
     OPT_MQTT_ERROR,
     OPT_MQTT_OUTPUT,
-    OPT_MQTT_OUTPUT_ON_ERROR,
     OPT_MQTT_PREFIX,
     OPT_MQTT_QOS,
     OPT_MQTT_RETAIN,
@@ -45,28 +44,6 @@ class Monitor:
         self.mqtt_retain = opts.get(OPT_MQTT_RETAIN)  # required for publish
         self._mqtt_output_opts = opts.get(OPT_MQTT_OUTPUT)
         self._mqtt_error_opts = opts.get(OPT_MQTT_ERROR)
-
-        self.mqtt_output_topic = None
-        if opts.get(OPT_MQTT_OUTPUT):
-            mqtt_output = opts[OPT_MQTT_OUTPUT]
-            self.mqtt_output_topic = self.get_topic(
-                mqtt_topic,
-                type_prefix=mqtt_output[OPT_MQTT_TOPIC_PREFIX],
-                type_suffix=mqtt_output[OPT_MQTT_TOPIC_SUFFIX],
-            )
-            self.mqtt_output_qos = mqtt_output[OPT_MQTT_QOS]
-            self.mqtt_output_retain = mqtt_output[OPT_MQTT_RETAIN]
-        self.mqtt_error_topic = None
-        if opts.get(OPT_MQTT_ERROR):
-            mqtt_error = opts[OPT_MQTT_ERROR]
-            self.mqtt_error_topic = self.get_topic(
-                mqtt_topic,
-                type_prefix=mqtt_error[OPT_MQTT_TOPIC_PREFIX],
-                type_suffix=mqtt_error[OPT_MQTT_TOPIC_SUFFIX],
-            )
-            self.mqtt_error_qos = mqtt_error[OPT_MQTT_QOS]
-            self.mqtt_error_retain = mqtt_error[OPT_MQTT_RETAIN]
-            self.mqtt_output_on_error = mqtt_error[OPT_MQTT_OUTPUT_ON_ERROR]
         self.commands = []
 
     def get_topic(
@@ -128,24 +105,29 @@ class Monitor:
             retain=mqtt_output_opts[OPT_MQTT_RETAIN],
         )
 
-    def publish_error(self, errmsg, command=None, output=None, rc=255):
+    def publish_error(self, errmsg, errdetail=None):
         """Publish to MQTT error topic."""
         mqtt_error_opts = self._mqtt_error_opts
         mqtt_output_opts = self._mqtt_output_opts
         assert mqtt_error_opts is not None and mqtt_output_opts is not None
 
-        mqtt_error_topic = self.get_topic(
-            type_prefix=mqtt_error_opts[OPT_MQTT_TOPIC_PREFIX],
-            type_suffix=mqtt_error_opts[OPT_MQTT_TOPIC_SUFFIX],
-        )
+        error_prefix = mqtt_error_opts[OPT_MQTT_TOPIC_PREFIX]
+        error_suffix = mqtt_error_opts[OPT_MQTT_TOPIC_SUFFIX]
+        if not error_prefix and not error_suffix:
+            ## mqtt_error not specified
+            return
+
+        payload = errmsg if errmsg else ""
+        if errdetail:
+            payload += ": " + errdetail
+
+        mqtt_error_topic = self.get_topic(error_prefix, error_suffix)
         self.publish(
-            errmsg,
+            payload,
             topic=mqtt_error_topic,
             qos=mqtt_error_opts[OPT_MQTT_QOS],
             retain=mqtt_error_opts[OPT_MQTT_RETAIN],
         )
-        if command and output and mqtt_error_opts[OPT_MQTT_OUTPUT_ON_ERROR]:
-            self.publish_output(command, output, rc, errmsg)
 
     def publish_mqtt_discovery(self, discovery_opts, remove=False):
         """Publish config to MQTT discovery topic."""
