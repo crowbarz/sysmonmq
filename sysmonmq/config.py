@@ -72,6 +72,7 @@ OPT_CPU_LOAD_FILE = "load_file"
 OPT_CPU_LOAD_FORMAT = "load_format"
 OPT_MEMORY_USAGE = "memory_usage"
 OPT_MEMORY_USAGE_FILE = "usage_file"
+OPT_MEMORY_USAGE_METRICS = "metrics"
 OPT_DISK_USAGE = "disk_usage"
 OPT_DISK_USAGE_COMMAND = "usage_command"
 OPT_CPU_TEMP = "cpu_temperature"
@@ -290,6 +291,7 @@ CPU_LOAD_OPTS_ALL = {**CPU_LOAD_OPTS_DEF, **SYSTEM_SENSOR_OPTS_SUB}.keys()
 MEMORY_USAGE_OPTS_DEF = {
     **SYSTEM_SENSOR_OPTS_DEF,
     OPT_MEMORY_USAGE_FILE: "/proc/meminfo",
+    OPT_MEMORY_USAGE_METRICS: ["MemTotal", "MemFree", "MemAvailable"],
     OPT_MQTT_TOPIC: "memory_usage",
 }
 MEMORY_USAGE_OPTS_ALL = {**MEMORY_USAGE_OPTS_DEF, **SYSTEM_SENSOR_OPTS_SUB}.keys()

@@ -23,6 +23,7 @@ from .config import (
     OPT_DISK_USAGE_COMMAND,
     OPT_MEMORY_USAGE,
     OPT_MEMORY_USAGE_FILE,
+    OPT_MEMORY_USAGE_METRICS,
     OPT_CPU_TEMP,
     OPT_TEMP_SENSOR_FILE,
     OPT_MQTT_TOPIC,
@@ -266,6 +267,7 @@ class MemoryUsageSensor(Sensor):
     def __init__(self, opts, config):
         super().__init__(opts, config)
         self._memory_usage_file = opts[OPT_MEMORY_USAGE_FILE]
+        self._metrics_filter = opts[OPT_MEMORY_USAGE_METRICS]
 
     def update(self):
         """Update memory usage sensor."""
@@ -274,6 +276,12 @@ class MemoryUsageSensor(Sensor):
             metrics_list = list(
                 map(lambda x: {x.split(":", 1)[0]: x.rsplit(" ", 2)[-2]}, metrics)
             )
+            metrics_filter = self._metrics_filter
+            if metrics_filter:
+                metrics_list = filter(
+                    lambda x: list(x.keys())[0] in metrics_filter,
+                    metrics_list,
+                )
             metrics_map = reduce(lambda x, y: dict(x, **y), metrics_list)
         except Exception as e:
             if is_debug_level(4):
@@ -429,7 +437,7 @@ def _create_system_sensor(
     if opts is None:  ## only section header supplied
         opts = {}
     if check_opts(opts, opts_all, section=section):
-        merge(sensor_opts, opts, limit=0)
+        merge(sensor_opts, opts, limit=1)
         inherit_opts(sensor_opts, base_opts)
     else:
         err = True

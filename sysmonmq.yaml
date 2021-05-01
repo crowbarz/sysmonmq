@@ -106,17 +106,22 @@ system_sensors:
     # mqtt_retain: false
 
   ## Enable MQTT memory usage messages with memory metrics as reported by the
-  ## underlying operating system. If enabled, all memory metrics are sent to
+  ## underlying operating system. If enabled, memory metrics are sent to
   ## the following topic as a JSON formatted message:
   ##
   ## mqtt_prefix/system_sensors/memory_usage
   ##
+  ## By default, only these metrics are sent: MemTotal, MemFree, MemAvailable
+  ## Additional metrics to be included may be specified.
   memory_usage:
     refresh_interval: 1800
     # usage_file: "/proc/meminfo"
     # mqtt_topic: "memory_usage"
     # mqtt_qos: 1
     # mqtt_retain: false
+    # metrics:
+    #   - Buffers
+
 
   ## Enable MQTT disk usage messages with total, used and available 1K blocks as
   ## reported by the underlying system. If enabled, disk metrics for all local
