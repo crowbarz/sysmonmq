@@ -5,6 +5,7 @@ from .const import (
     DEF_MQTT_DISCOVERY_RETAIN,
     DEF_MQTT_SUBSCRIBE_QOS,
     DEF_REFRESH_INTERVAL,
+    DEF_GLOBAL_REFRESH_INTERVAL,
     DEF_COMMAND_TIMEOUT,
     DEF_DEBUG,
     DEF_MQTT_RECONNECT_DELAY_MIN,
@@ -67,6 +68,7 @@ OPT_MQTT_PAYLOAD = "mqtt_payload"
 OPT_MQTT_PREFIX = "mqtt_prefix"
 OPT_MQTT_PREFIX_HOST = "mqtt_prefix_host"
 
+OPT_GLOBAL_REFRESH = "global_refresh"
 OPT_CPU_LOAD_AVERAGE = "cpu_load_average"
 OPT_CPU_LOAD_FILE = "load_file"
 OPT_CPU_LOAD_FORMAT = "load_format"
@@ -248,26 +250,9 @@ MQTT_ERROR_OPTS_DEF = {
 }
 MQTT_ERROR_OPTS_ALL = MQTT_ERROR_OPTS_DEF.keys()
 
-## Sensor options
-SYSTEM_SENSORS_OPTS_DEF = {
-    OPT_MQTT_PREFIX: None,  # inherit
-    OPT_MQTT_TOPIC_PREFIX: "system",
-    OPT_MQTT_QOS: DEF_MQTT_QOS,
-    OPT_MQTT_RETAIN: DEF_MQTT_RETAIN,
-    OPT_REFRESH_INTERVAL: None,  # inherit
-    OPT_COMMAND_TIMEOUT: None,  # inherit
-}
-SYSTEM_SENSORS_OPTS_SUB = {
-    OPT_CPU_LOAD_AVERAGE: None,
-    OPT_MEMORY_USAGE: None,
-    OPT_DISK_USAGE: None,
-    OPT_CPU_TEMP: None,
-    OPT_MQTT_OUTPUT: None,
-    OPT_MQTT_ERROR: None,
-}
-SYSTEM_SENSORS_OPTS_ALL = {**SYSTEM_SENSORS_OPTS_DEF, **SYSTEM_SENSORS_OPTS_SUB}.keys()
-SYSTEM_SENSORS_OPTS_SUB_ALL = SYSTEM_SENSORS_OPTS_SUB.keys()
+## System sensor options
 
+## Common sub-options for all system sensors
 SYSTEM_SENSOR_OPTS_DEF = {
     OPT_MQTT_PREFIX: None,  # inherit
     OPT_MQTT_TOPIC_PREFIX: None,  # inherit
@@ -279,6 +264,34 @@ SYSTEM_SENSOR_OPTS_SUB = {
     OPT_MQTT_OUTPUT: None,
     OPT_MQTT_ERROR: None,
 }
+
+## System sensor section options
+SYSTEM_SENSORS_OPTS_DEF = {
+    OPT_MQTT_PREFIX: None,  # inherit
+    OPT_MQTT_TOPIC_PREFIX: "system",
+    OPT_MQTT_QOS: DEF_MQTT_QOS,
+    OPT_MQTT_RETAIN: DEF_MQTT_RETAIN,
+    OPT_REFRESH_INTERVAL: None,  # inherit
+    OPT_COMMAND_TIMEOUT: None,  # inherit
+}
+SYSTEM_SENSORS_OPTS_SUB = {
+    OPT_GLOBAL_REFRESH: None, # always configured
+    OPT_CPU_LOAD_AVERAGE: None,
+    OPT_MEMORY_USAGE: None,
+    OPT_DISK_USAGE: None,
+    OPT_CPU_TEMP: None,
+    OPT_MQTT_OUTPUT: None,
+    OPT_MQTT_ERROR: None,
+}
+SYSTEM_SENSORS_OPTS_ALL = {**SYSTEM_SENSORS_OPTS_DEF, **SYSTEM_SENSORS_OPTS_SUB}.keys()
+SYSTEM_SENSORS_OPTS_SUB_ALL = SYSTEM_SENSORS_OPTS_SUB.keys()
+
+## System sensor specific options
+GLOBAL_REFRESH_OPTS_DEF = {
+    **SYSTEM_SENSOR_OPTS_DEF,
+    OPT_REFRESH_INTERVAL: DEF_GLOBAL_REFRESH_INTERVAL,  ## separate global default
+}
+GLOBAL_REFRESH_OPTS_ALL = {**GLOBAL_REFRESH_OPTS_DEF, **SYSTEM_SENSOR_OPTS_SUB}.keys()
 
 CPU_LOAD_OPTS_DEF = {
     **SYSTEM_SENSOR_OPTS_DEF,

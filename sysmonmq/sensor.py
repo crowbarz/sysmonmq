@@ -7,9 +7,12 @@ from functools import reduce
 
 from .const import APP_NAME, DEF_MQTT_QOS
 from .config import (
+    GLOBAL_REFRESH_OPTS_ALL,
+    GLOBAL_REFRESH_OPTS_DEF,
     OPT_BIRTH,
     OPT_CLIENT,
     OPT_CLOSE,
+    OPT_GLOBAL_REFRESH,
     OPT_MQTT,
     OPT_MQTT_ERROR,
     OPT_MQTT_OUTPUT,
@@ -109,10 +112,14 @@ class Sensor(Monitor):
 class GlobalRefresh(Sensor):
     """Pseudo-sensor to refresh all sensors every global refresh_interval."""
 
-    def __init__(self, refresh_interval, config):
+    def __init__(self, opts, config):
         # super().__init__(opts, config)
+        refresh_interval = opts[OPT_REFRESH_INTERVAL]
         if is_debug_level(8):
-            _LOGGER.debug(type(self).__name__ + "()")
+            _LOGGER.debug(
+                "%s(refresh_interval=%s)", type(self).__name__, refresh_interval
+            )
+
         self.config = config
         self.refresh_interval = refresh_interval
         self.refresh_countdown = 0
@@ -499,17 +506,31 @@ def setup_system_sensors(opts, top_opts, config):  # -> [Monitor]|None
         sensors_opts[OPT_MQTT_OUTPUT] = mqtt_output_opts
         sensors_opts[OPT_MQTT_ERROR] = mqtt_error_opts
 
-    if not err:
-        ## Set up global refresh sensor
-        refresh_interval = config.refresh_interval
-        sensors.append(GlobalRefresh(refresh_interval, config))
+    ## Set up global refresh sensor
+    # refresh_interval = config.refresh_interval
+    # sensors.append(GlobalRefresh(refresh_interval, config))
+    (global_refresh_obj, global_refresh_opts) = _create_system_sensor(
+        GlobalRefresh,
+        OPT_GLOBAL_REFRESH,
+        opts.get(OPT_GLOBAL_REFRESH),
+        GLOBAL_REFRESH_OPTS_DEF,
+        GLOBAL_REFRESH_OPTS_ALL,
+        sensors_opts,
+        config,
+    )
+    if global_refresh_obj is None:
+        err = True
+    else:
+        sensors_opts[OPT_GLOBAL_REFRESH] = global_refresh_opts
+        sensors.append(global_refresh_obj)
 
+    if not err:
         ## Set up MQTT client sensor
         client_opts = top_opts[OPT_MQTT].get(OPT_CLIENT)
         if client_opts and client_opts[OPT_BIRTH][OPT_TOPIC]:
             sensors.append(MQTTClientSensor(client_opts, config))
 
-    if OPT_CPU_LOAD_AVERAGE in opts:
+    if not err and OPT_CPU_LOAD_AVERAGE in opts:
         (cpu_load_sensor_obj, cpu_load_opts) = _create_system_sensor(
             CPULoadAverageSensor,
             OPT_CPU_LOAD_AVERAGE,
@@ -581,17 +602,20 @@ def update_sensors(config, sensors, slept_time=0):  # -> sleep_interval
     assert mqtt_is_connected()
 
     sleep_interval = config.refresh_interval
+    force_check = config.force_check
     if is_debug_level(8):
-        _LOGGER.debug("update_sensors(force_check=%s)", config.force_check)
+        _LOGGER.debug("update_sensors(force_check=%s)", force_check)
     for sensor in sensors:
+        ## Refresh sensors if refresh_interval is set
+        refresh_interval = sensor.refresh_interval
         if issubclass(type(sensor), Sensor):
             sensor.refresh_countdown -= slept_time
-            if sensor.refresh_countdown <= 0 or (
-                config.force_check and not isinstance(sensor, GlobalRefresh)
+            if (refresh_interval > 0 and sensor.refresh_countdown <= 0) or (
+                force_check and not isinstance(sensor, GlobalRefresh)
             ):
                 sensor.update()
-                sensor.refresh_countdown = sensor.refresh_interval
-            if sleep_interval > sensor.refresh_countdown:
+                sensor.refresh_countdown = refresh_interval
+            if refresh_interval > 0 and sleep_interval > sensor.refresh_countdown:
                 sleep_interval = sensor.refresh_countdown
         else:
             _LOGGER.warning("skipping update for %s", type(sensor).__name__)

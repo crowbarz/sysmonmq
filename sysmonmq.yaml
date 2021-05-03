@@ -89,6 +89,10 @@ mqtt:
 
 ## System sensors. Send updates to system metrics via MQTT topics.
 system_sensors:
+  ## Periodically force refresh all system sensors. Defaults to the first
+  ## update that is triggered after 3600s (60 min).
+  # global_refresh:
+  #   refresh_interval: 3600
 
   ## Enable MQTT load average messages with 1m, 5m and 15m average load as
   ## computed by the underlying system. If enabled, all average load values are
@@ -121,7 +125,6 @@ system_sensors:
     # mqtt_retain: false
     # metrics:
     #   - Buffers
-
 
   ## Enable MQTT disk usage messages with total, used and available 1K blocks as
   ## reported by the underlying system. If enabled, disk metrics for all local
@@ -290,7 +293,7 @@ monitored_containers:
 ## rc to the following topic:
 ##
 ## {mqtt_prefix}/[{mqtt_output.mqtt_topic_prefix}/][{mqtt_topic_prefix}/]{mqtt_topic}[/{mqtt_output.mqtt_topic_suffix}]
-
+##
 actions_list:
   # command_timeout: 10 # inherited
   # mqtt_topic_prefix: action
