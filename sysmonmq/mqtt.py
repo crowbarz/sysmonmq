@@ -245,7 +245,7 @@ def mqtt_on_connect(var_mqttc, state, flags, rc):
     assert var_mqttc == mqttc
     errmsg = None
     if rc:
-        errmsg = "MQTT connect error: " + mqtt_client.connack_string(rc)
+        errmsg = mqtt_client.connack_string(rc)
     else:
         mqtt_connected = True
     MQTTConnectEvent(mqttc, state, rc, errmsg)
@@ -419,9 +419,14 @@ def mqtt_message_callback_add(sub, callback):
     mqttc.message_callback_add(sub, callback)
 
 
-def mqtt_subscribe(subs) -> bool:
+def mqtt_subscribe(subs):
     """Subscribe to list of subscriptions."""
     assert mqttc is not None
 
     (rc, _) = mqttc.subscribe(subs)
-    return True if rc == mqtt_client.MQTT_ERR_SUCCESS else False
+    return True if rc == mqtt_client.MQTT_ERR_SUCCESS else rc
+
+
+def mqtt_error_string(rc):
+    """Retrieve error string for Paho return code."""
+    return mqtt_client.error_string(rc)

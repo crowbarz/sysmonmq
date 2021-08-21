@@ -605,16 +605,15 @@ def update_sensors(config, sensors, slept_time=0):  # -> sleep_interval
     assert mqtt_is_connected()
 
     sleep_interval = config.refresh_interval
-    force_check = config.force_check
     if is_debug_level(8):
-        _LOGGER.debug("update_sensors(force_check=%s)", force_check)
+        _LOGGER.debug("update_sensors(force_check=%s)", config.force_check)
     for sensor in sensors:
         ## Refresh sensors if refresh_interval is set
         refresh_interval = sensor.refresh_interval
         if issubclass(type(sensor), Sensor):
             sensor.refresh_countdown -= slept_time
-            if (refresh_interval > 0 and sensor.refresh_countdown <= 0) or (
-                force_check and not isinstance(sensor, GlobalRefresh)
+            if config.force_check or (
+                refresh_interval > 0 and sensor.refresh_countdown <= 0
             ):
                 sensor.update()
                 sensor.refresh_countdown = refresh_interval

@@ -50,6 +50,11 @@ class SysMonMQ:
         self.mqtt_debug = False  ## Enable MQTT debugging
 
 
+## Exception classes
+class MQTTError(Exception):
+    pass
+
+
 ## Event classes
 class Event(ABC):
     def __init__(self):
@@ -72,6 +77,14 @@ class MQTTConnectEvent(MQTTEvent):
 
 
 class MQTTDisconnectEvent(MQTTEvent):
+    pass
+
+
+class MQTTSubscribeEvent(Event):
+    pass
+
+
+class MQTTDiscoveryEvent(Event):
     pass
 
 

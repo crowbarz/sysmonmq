@@ -16,17 +16,21 @@ from .config import (
     OPT_REFRESH_INTERVAL,
 )
 from .globals import (
+    MQTTSubscribeEvent,
     SysMonMQ,
+    MQTTError,
     MQTTConnectEvent,
     MQTTDisconnectEvent,
+    MQTTSubscribeEvent,
+    MQTTDiscoveryEvent,
     CommandEvent,
     MessageEvent,
     WatcherEvent,
 )
 from .options import parse_opts
-from .mqtt import mqtt_close, mqtt_connect, mqtt_is_connected
+from .mqtt import mqtt_close, mqtt_connect, mqtt_is_connected, mqtt_error_string
 from .action import send_mqtt_discovery, subscribe_actions
-from .sensor import schedule_refresh_all_sensors, update_sensors
+from .sensor import update_sensors
 from .debug import is_debug_level
 
 _LOGGER = logging.getLogger(APP_NAME)
@@ -36,47 +40,55 @@ def sigterm_handler(signal, frame):
     raise Exception("SIGTERM caught, exiting")
 
 
-def handle_events(config):
-    # -> type(bool): True==connect event, False==disconnect event
-    #    type(NoneType): error
-    #    type(int): sleep_interval
+def get_event():
+    """Retrieve next event from the event queue."""
+    with SysMonMQ.lock:
+        if SysMonMQ.events:
+            ## Retrieve event queue
+            event = SysMonMQ.events.pop(0)
+            if not SysMonMQ.events:
+                SysMonMQ.event.clear()
+            return event
+    return None
+
+
+def handle_event(config, event):
     """Handle SysMonitor events."""
-    sleep_interval = config.refresh_interval
-    while SysMonMQ.events:
-        event = SysMonMQ.events.pop()
-        if is_debug_level(6):
-            _LOGGER.debug("handling event %s", type(event).__name__)
-        if isinstance(event, MQTTConnectEvent):
-            if event.rc != 0:
-                ## MQTT connection error, abort
-                _LOGGER.error(event.errmsg)
-                return None
-            _LOGGER.info("connected to MQTT broker")
-            if subscribe_actions(config.actions):
-                return True  ## Connect event
-            else:
-                return None  ## MQTT subscribe error
-        elif isinstance(event, MQTTDisconnectEvent):
-            if event.rc != 0:
-                _LOGGER.error(event.errmsg)
-            else:
-                _LOGGER.info("disconnected from MQTT broker")
-            ## TODO: stop or ignore watchers
-            return False  ## Disconnect event
-        elif not mqtt_is_connected():
-            _LOGGER.warning(
-                "not connected to MQTT broker, ignoring event %s", type(event).__name__
-            )
-        elif isinstance(event, MessageEvent):
-            event.action.on_message(event.message)
-        elif isinstance(event, CommandEvent):
-            event.monitor.process_command(event.com)
-        elif isinstance(event, WatcherEvent):
-            config.force_check = True
-            update_sensors(config, event.sensors)
+    if is_debug_level(5):
+        _LOGGER.debug("handling event %s", type(event).__name__)
+    if isinstance(event, MQTTConnectEvent):
+        if event.rc != 0:
+            raise MQTTError("could not connect to broker: %s", event.errmsg)
+        _LOGGER.info("connected to MQTT broker")
+        MQTTSubscribeEvent()
+        MQTTDiscoveryEvent()
+
+        ## TODO: queue new event
+    elif isinstance(event, MQTTDisconnectEvent):
+        if event.rc != 0:
+            raise MQTTError("error disconnecting from broker: %s", event.errmsg)
         else:
-            raise RuntimeError(f"Unhandled event: {type(event).__name__}")
-    return sleep_interval
+            _LOGGER.info("disconnected from MQTT broker")
+            ## TODO: stop or ignore watchers
+    elif not mqtt_is_connected():
+        _LOGGER.warning(
+            "not connected to MQTT broker, ignoring event %s", type(event).__name__
+        )
+    elif isinstance(event, MQTTSubscribeEvent):
+        rc = subscribe_actions(config.actions)
+        if rc is not True:
+            raise MQTTError("could not subscribe: %s", mqtt_error_string(rc))
+    elif isinstance(event, MQTTDiscoveryEvent):
+        send_mqtt_discovery(config)  ## will trigger sensor refresh
+    elif isinstance(event, MessageEvent):
+        event.action.on_message(event.message)
+    elif isinstance(event, CommandEvent):
+        event.monitor.process_command(event.com)
+    elif isinstance(event, WatcherEvent):
+        config.force_check = True
+        # update_sensors(config, event.sensors)
+    else:
+        raise RuntimeError(f"Unhandled event: {type(event).__name__}")
 
 
 def main():
@@ -99,51 +111,42 @@ def main():
     reconnect_delay_max = mqtt_opts[OPT_RECONNECT_DELAY_MAX]
     sleep_interval = reconnect_delay_max
 
+    ## Main loop
     while True:
         sleep_start = time.time()
         if is_debug_level(6):
             _LOGGER.debug("sleeping for %ds", sleep_interval)
         SysMonMQ.event.wait(timeout=sleep_interval)
         slept_time = int(time.time() - sleep_start)
-        sleep_interval = config.refresh_interval
         if is_debug_level(6):
             _LOGGER.debug("slept for %ds", slept_time)
+        sleep_interval = config.refresh_interval
 
-        with SysMonMQ.lock:
-            ## Handle sensor updates
-            if mqtt_is_connected():
-                sleep_interval = update_sensors(config, config.sensors, slept_time)
-
+        event = get_event()
+        connected = mqtt_is_connected()
+        if event:
             ## Handle event queue
             config.force_check = False
-            if SysMonMQ.event.is_set():
-                rc = handle_events(config)
-                if rc is True:  ## Connect event
-                    send_mqtt_discovery(config)  ## will trigger sensor refresh
-                    # config.force_check = True
-                    # schedule_refresh_all_sensors(config)
-                elif rc is False:  ## Disconnect event
-                    pass
-                elif rc is None:  ## Error
-                    if mqtt_is_connected() is None:
-                        ## Exit main loop only on initial connection
-                        break
-                elif not SysMonMQ.events:
-                    SysMonMQ.event.clear()
+            try:
+                handle_event(config, event)
+            except MQTTError as exc:
+                _LOGGER.error("MQTT error: %s", exc)
+                if mqtt_is_connected() is None:
+                    break  ## exit on initial connection failure
 
-                ## re-run event loop until events are cleared
-                sleep_interval = 0
+            ## re-run event loop until events are cleared
+            sleep_interval = 0
+        elif connected is None:
 
-            ## Handle connect timeout and reconnection
-            connected = mqtt_is_connected()
-            if connected is None:
-                ## Timeout on initial connection, exit
-                _LOGGER.error("initial connection to MQTT broker timed out")
-                break
-            elif not connected:
-                ## Disconnected state, waiting for reconnection
-                _LOGGER.warning("waiting for MQTT broker reconnection")
-                sleep_interval = reconnect_delay_max
+            _LOGGER.error("initial connection to MQTT broker timed out")
+            break  ## exit on initial connection timeout
+        elif not connected:
+            ## Disconnected state, waiting for reconnection
+            _LOGGER.warning("waiting for MQTT broker reconnection")
+            sleep_interval = reconnect_delay_max
+        else:
+            ## Handle sensor updates
+            sleep_interval = update_sensors(config, config.sensors, slept_time)
 
     ## Abnormally exited main loop
     exit(1)
