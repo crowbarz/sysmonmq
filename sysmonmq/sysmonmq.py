@@ -58,7 +58,7 @@ def handle_event(config, event):
         _LOGGER.debug("handling event %s", type(event).__name__)
     if isinstance(event, MQTTConnectEvent):
         if event.rc != 0:
-            raise MQTTError("could not connect to broker: %s", event.errmsg)
+            raise MQTTError("could not connect to broker: %s" % event.errmsg)
         _LOGGER.info("connected to MQTT broker")
         MQTTSubscribeEvent()
         MQTTDiscoveryEvent()
@@ -66,7 +66,7 @@ def handle_event(config, event):
         ## TODO: queue new event
     elif isinstance(event, MQTTDisconnectEvent):
         if event.rc != 0:
-            raise MQTTError("error disconnecting from broker: %s", event.errmsg)
+            raise MQTTError("error disconnecting from broker: %s" % event.errmsg)
         else:
             _LOGGER.info("disconnected from MQTT broker")
             ## TODO: stop or ignore watchers
@@ -77,7 +77,7 @@ def handle_event(config, event):
     elif isinstance(event, MQTTSubscribeEvent):
         rc = subscribe_actions(config.actions)
         if rc is not True:
-            raise MQTTError("could not subscribe: %s", mqtt_error_string(rc))
+            raise MQTTError("could not subscribe: %s" % mqtt_error_string(rc))
     elif isinstance(event, MQTTDiscoveryEvent):
         send_mqtt_discovery(config)  ## will trigger sensor refresh
     elif isinstance(event, MessageEvent):
