@@ -31,6 +31,7 @@ from .config import (
     OPT_TEMP_SENSOR_FILE,
     OPT_MQTT_TOPIC,
     OPT_MQTT_QOS,
+    OPT_MQTT_RETAIN,
     OPT_TOPIC,
     OPT_PAYLOAD,
     OPT_QOS,
@@ -142,10 +143,19 @@ class MQTTClientSensor(Sensor):
     """Pseudo-sensor represeting MQTT client. Sends birth message periodically."""
 
     def __init__(self, client_opts, config):
-        client_opts[OPT_MQTT_TOPIC] = ""  # dummy topic
-        client_opts[OPT_MQTT_QOS] = DEF_MQTT_QOS  # dummy qos
-        super().__init__(client_opts, config)
+        birth_opts = client_opts[OPT_BIRTH]
+
+        super().__init__(
+            {
+                **birth_opts,
+                OPT_MQTT_TOPIC: birth_opts[OPT_TOPIC],
+                OPT_MQTT_QOS: birth_opts[OPT_QOS],
+                OPT_MQTT_RETAIN: birth_opts[OPT_RETAIN],
+            },
+            config,
+        )
         self._client_opts = client_opts
+        self._payload_birth = birth_opts[OPT_PAYLOAD]
 
         ## Inconsistent close and will payloads causes issues with MQTT
         ## discovery as only one payload_not_available can be specified.
@@ -153,19 +163,13 @@ class MQTTClientSensor(Sensor):
         payload_will = client_opts[OPT_WILL][OPT_PAYLOAD]
         if payload_close != payload_will:
             _LOGGER.warning("inconsistent MQTT close and will payloads")
+        self._payload_close = payload_close
 
     def update(self):
         """Send MQTT birth message on update."""
         if is_debug_level(4):
             _LOGGER.debug("MQTTClientSensor: publishing birth message")
-        birth_opts = self._client_opts[OPT_BIRTH]
-        topic = self.get_topic(birth_opts[OPT_TOPIC], birth_opts[OPT_MQTT_PREFIX])
-        self.publish(
-            birth_opts[OPT_PAYLOAD],
-            topic=topic,
-            qos=birth_opts[OPT_QOS],
-            retain=birth_opts[OPT_RETAIN],
-        )
+        self.publish(self._payload_birth)
 
     def get_mqtt_discovery_config(self, device_name, device_id, device_data):
         """System status Home Assistant MQTT discovery config."""
@@ -174,8 +178,7 @@ class MQTTClientSensor(Sensor):
 
         entity_name = "System Status"
         entity_slug = slugify(entity_name)
-        birth_msg = self._client_opts[OPT_BIRTH]
-        birth_topic = self.get_topic(birth_msg[OPT_TOPIC], birth_msg[OPT_MQTT_PREFIX])
+        birth_topic = self.get_topic()
         close_msg = self._client_opts[OPT_CLOSE]
         return {
             "binary_sensor": {
@@ -185,8 +188,8 @@ class MQTTClientSensor(Sensor):
                     "name": device_name + " " + entity_name,
                     "state_topic": birth_topic,
                     "device_class": "connectivity",
-                    "payload_on": birth_msg[OPT_PAYLOAD],
-                    "payload_off": close_msg[OPT_PAYLOAD],
+                    "payload_on": self._payload_birth,
+                    "payload_off": self._payload_close,
                 },
             },
         }

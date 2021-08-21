@@ -31,10 +31,7 @@ class Monitor:
         if is_debug_level(8):
             _LOGGER.debug(type(self).__name__ + "(opts=%s)", opts)
         self.config = config
-        if config:
-            mqtt_prefix = opts[OPT_MQTT_PREFIX]  # required
-        else:
-            mqtt_prefix = opts[OPT_MQTT_PREFIX]  # required
+        mqtt_prefix = opts[OPT_MQTT_PREFIX]  # required
         mqtt_topic_prefix = opts.get(OPT_MQTT_TOPIC_PREFIX)
         mqtt_topic = opts[OPT_MQTT_TOPIC]  # required
         self.mqtt_prefix = mqtt_prefix
