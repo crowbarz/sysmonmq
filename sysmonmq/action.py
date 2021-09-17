@@ -171,13 +171,13 @@ class CommandAction(Action):
     def on_command_exit(self, com):
         """Handle command completion from main event loop."""
         errmsg = com.err_msg
-        command = self._command
+        command = com.command
         output = com.output
         rc = com.rc
         if errmsg:
             if is_debug_level(4):
                 _LOGGER.debug("CommandAction(%s): error=%s", self.name, errmsg)
-            self.publish_error(errmsg, command, output, rc)
+            self.publish_error(errmsg, {"command": command, "output": output, "rc": rc})
         else:
             _LOGGER.info('CommandAction(%s): output="%s", rc=%s', self.name, output, rc)
             self.publish_output(command, output, rc)

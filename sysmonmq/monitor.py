@@ -2,6 +2,7 @@
 
 import logging
 import json
+from typing import Dict
 
 from .const import APP_NAME, DEF_COMMAND_TIMEOUT
 from .config import (
@@ -114,9 +115,14 @@ class Monitor:
             ## mqtt_error not specified
             return
 
-        payload = errmsg if errmsg else ""
-        if errdetail:
-            payload += ": " + errdetail
+        if type(errdetail) is dict:
+            ## generate JSON error object
+            payload = json.dumps({"error": errmsg, **errdetail})
+        else:
+            ## generate string error message
+            payload = errmsg if errmsg else ""
+            if errdetail:
+                payload += ": " + errdetail
 
         mqtt_error_topic = self.get_topic(error_prefix, error_suffix)
         self.publish(

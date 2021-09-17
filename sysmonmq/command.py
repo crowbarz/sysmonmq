@@ -59,16 +59,13 @@ class Command:
             self.output = str(e.output, encoding="utf-8", errors="ignore").strip()
             self.rc = e.returncode
             if not self.ignore_rc:
-                self.err_msg = f'command "{self.command}" returned code ' f"{self.rc}"
+                self.err_msg = f"command returned code {self.rc}"
         except subprocess.TimeoutExpired as e:
             self.rc = 254
-            self.err_msg = 'execution of command "%s" exceeded timeout %ds' % (
-                self.command,
-                self.timeout,
-            )
+            self.err_msg = "command exceeded timeout {self.timeout}s"
         except Exception as e:
             self.rc = 255
-            self.err_msg = f'error executing command "{self.command}": {e}'
+            self.err_msg = f"error executing command: {str(e)}"
         finally:
             if is_debug_level(5):
                 _LOGGER.debug(
