@@ -30,7 +30,7 @@ from .globals import (
 from .options import parse_opts
 from .mqtt import mqtt_close, mqtt_connect, mqtt_is_connected, mqtt_error_string
 from .action import send_mqtt_discovery, subscribe_actions
-from .sensor import update_sensors
+from .sensor import schedule_refresh_sensors, update_sensors
 from .debug import is_debug_level
 
 _LOGGER = logging.getLogger(APP_NAME)
@@ -61,9 +61,7 @@ def handle_event(config, event):
             raise MQTTError("could not connect to broker: %s" % event.errmsg)
         _LOGGER.info("connected to MQTT broker")
         MQTTSubscribeEvent()
-        MQTTDiscoveryEvent()
-
-        ## TODO: queue new event
+        MQTTDiscoveryEvent()  ## does not honour DEF_MQTT_DISCOVERY_UPDATE_DELAY
     elif isinstance(event, MQTTDisconnectEvent):
         if event.rc != 0:
             raise MQTTError("error disconnecting from broker: %s" % event.errmsg)
@@ -85,8 +83,7 @@ def handle_event(config, event):
     elif isinstance(event, CommandEvent):
         event.monitor.process_command(event.com)
     elif isinstance(event, WatcherEvent):
-        config.force_check = True
-        # update_sensors(config, event.sensors)
+        schedule_refresh_sensors(config, event.sensors)
     else:
         raise RuntimeError(f"Unhandled event: {type(event).__name__}")
 
@@ -114,19 +111,21 @@ def main():
     ## Main loop
     while True:
         sleep_start = time.time()
-        if is_debug_level(6):
-            _LOGGER.debug("sleeping for %ds", sleep_interval)
-        SysMonMQ.event.wait(timeout=sleep_interval)
-        slept_time = int(time.time() - sleep_start)
-        if is_debug_level(6):
-            _LOGGER.debug("slept for %ds", slept_time)
+        if sleep_interval > 0:
+            if is_debug_level(6):
+                _LOGGER.debug("sleeping for %ds", sleep_interval)
+            SysMonMQ.event.wait(timeout=sleep_interval)
+            slept_time = int(time.time() - sleep_start)
+            if is_debug_level(6):
+                _LOGGER.debug("slept for %ds", slept_time)
+        else:
+            slept_time = 0
         sleep_interval = config.refresh_interval
 
         event = get_event()
         connected = mqtt_is_connected()
         if event:
             ## Handle event queue
-            config.force_check = False
             try:
                 handle_event(config, event)
             except MQTTError as exc:

@@ -172,7 +172,7 @@ def parse_opts(config):  # -> top_opts
         if system_sensors is None:
             err = True
         else:
-            config.sensors += system_sensors
+            config.sensors = system_sensors
             top_opts[OPT_SYSTEM_SENSORS] = sensors_opts
 
     if OPT_MONITORED_SERVICES in opts:

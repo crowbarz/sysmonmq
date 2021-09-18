@@ -62,7 +62,6 @@ class CommandSensor(Sensor):
         if not self.display_name:
             self.display_name = name  # default to name
         self.service_status = None
-        self.force_refresh = False
 
         self._config = config
         self._ignore_rc = opts[OPT_IGNORE_RC]  # required
@@ -131,7 +130,6 @@ class CommandSensor(Sensor):
                 self.publish(status)
             _LOGGER.debug("CommandSensor(%s): status=%s", self.name, status)
             self.service_status = status
-            self.force_refresh = False
         else:
             if is_debug_level(4):
                 _LOGGER.debug(

@@ -38,7 +38,7 @@ class SysMonMQ:
         self.mqtt_prefix = None
 
         ## Monitors
-        self.sensors = []
+        self.sensors = []  ## first sensor is always GlobalRefresh
         self.actions = []
         self.watchers = []
 
@@ -46,7 +46,6 @@ class SysMonMQ:
         self.opts = None  ## top level options
         self.discovery_opts = None  ## top level MQTT discovery options
         self.refresh_interval = None  ## global refresh interval
-        self.force_check = False  ## force check on next refresh
         self.mqtt_debug = False  ## Enable MQTT debugging
 
 

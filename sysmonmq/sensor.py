@@ -4,7 +4,9 @@ import logging
 import re
 import json
 from functools import reduce
+from typing import List, Tuple
 
+from .globals import SysMonMQ
 from .const import APP_NAME, DEF_MQTT_QOS
 from .config import (
     GLOBAL_REFRESH_OPTS_ALL,
@@ -55,6 +57,7 @@ from .mqtt import (
     mqtt_is_connected,
 )
 from .monitor import Monitor
+from .command import Command
 from .util import check_opts, inherit_opts, merge, read_file, slugify
 from .debug import is_debug_level
 
@@ -64,7 +67,7 @@ _LOGGER = logging.getLogger(APP_NAME)
 class Sensor(Monitor):
     """Sensor base class."""
 
-    def __init__(self, opts, config):
+    def __init__(self, opts: dict, config: SysMonMQ):
         super().__init__(opts=opts, config=config)
         self.refresh_interval = opts[OPT_REFRESH_INTERVAL]
         self.refresh_countdown = 0
@@ -113,8 +116,8 @@ class Sensor(Monitor):
 class GlobalRefresh(Sensor):
     """Pseudo-sensor to refresh all sensors every global refresh_interval."""
 
-    def __init__(self, opts, config):
-        # super().__init__(opts, config)
+    def __init__(self, opts: dict, config: SysMonMQ):
+        # super().__init__(opts, config) ## do not process MQTT options
         refresh_interval = opts[OPT_REFRESH_INTERVAL]
         if is_debug_level(8):
             _LOGGER.debug(
@@ -123,26 +126,19 @@ class GlobalRefresh(Sensor):
 
         self.config = config
         self.refresh_interval = refresh_interval
-        self.refresh_countdown = 0
+        self.refresh_countdown = 0  ## refresh immediately
 
     def update(self):
         """Flag force refresh for all sensors on next update."""
-        config = self.config
-        sensors = config.sensors
-        assert isinstance(sensors, list) and len(sensors) >= 1
-
         if is_debug_level(4):
             _LOGGER.debug("GlobalRefresh: force refreshing all sensors")
-        for sensor in sensors:
-            if sensor != self and issubclass(type(sensor), Sensor):
-                sensor.force_refresh = True
-        config.force_check = True
+        schedule_refresh_all_sensors(self.config, force_refresh=True)
 
 
 class MQTTClientSensor(Sensor):
     """Pseudo-sensor represeting MQTT client. Sends birth message periodically."""
 
-    def __init__(self, client_opts, config):
+    def __init__(self, client_opts: dict, config: SysMonMQ):
         birth_opts = client_opts[OPT_BIRTH]
 
         super().__init__(
@@ -198,7 +194,7 @@ class MQTTClientSensor(Sensor):
 class CPULoadAverageSensor(Sensor):
     """CPU load average sensor."""
 
-    def __init__(self, opts, config):
+    def __init__(self, opts: dict, config: SysMonMQ):
         super().__init__(opts, config)
         self._cpu_load_format = opts[OPT_CPU_LOAD_FORMAT]
         self._cpu_load_file = opts[OPT_CPU_LOAD_FILE]
@@ -274,7 +270,7 @@ class CPULoadAverageSensor(Sensor):
 class MemoryUsageSensor(Sensor):
     """Memory usage sensor."""
 
-    def __init__(self, opts, config):
+    def __init__(self, opts: dict, config: SysMonMQ):
         super().__init__(opts, config)
         self._memory_usage_file = opts[OPT_MEMORY_USAGE_FILE]
         self._metrics_filter = opts[OPT_MEMORY_USAGE_METRICS]
@@ -327,7 +323,7 @@ class MemoryUsageSensor(Sensor):
 class DiskUsageSensor(Sensor):
     """Disk usage sensor."""
 
-    def __init__(self, opts, config):
+    def __init__(self, opts: dict, config: SysMonMQ):
         super().__init__(opts, config)
         self._disk_usage_command = opts[OPT_DISK_USAGE_COMMAND]
 
@@ -338,7 +334,7 @@ class DiskUsageSensor(Sensor):
         except Exception as e:
             self.publish_error("Could not queue update for disk usage sensor", str(e))
 
-    def on_command_exit(self, com):
+    def on_command_exit(self, com: Command):
         """Parse output of disk usage command."""
         if com.err_msg:
             if is_debug_level(4):
@@ -391,7 +387,7 @@ class DiskUsageSensor(Sensor):
 class TemperatureSensor(Sensor):
     """Temperature sensor."""
 
-    def __init__(self, opts, config):
+    def __init__(self, opts: dict, config: SysMonMQ):
         super().__init__(opts, config)
         self._temp_sensor_file = opts[OPT_TEMP_SENSOR_FILE]
         self.current_temp = 0
@@ -409,7 +405,6 @@ class TemperatureSensor(Sensor):
             if self.force_refresh or temp != self.current_temp:
                 self.publish("%.1f" % temp)
                 self.current_temp = temp
-                self.force_refresh = False
                 if is_debug_level(4):
                     _LOGGER.debug("TemperatureSensor: temp=%.1f", temp)
             else:
@@ -475,7 +470,9 @@ def _create_system_sensor(
     return (sensor, sensor_opts) if not err else (None, None)
 
 
-def setup_system_sensors(opts, top_opts, config):  # -> [Monitor]|None
+def setup_system_sensors(
+    opts: dict, top_opts: dict, config: SysMonMQ
+) -> Tuple[List[Monitor], dict]:
     """Set up CPU load, memory/disk usage and temperature sensors."""
     if is_debug_level(8):
         _LOGGER.debug("setup_system_sensors(opts=%s)", opts)
@@ -597,38 +594,59 @@ def setup_system_sensors(opts, top_opts, config):  # -> [Monitor]|None
             sensors_opts[OPT_CPU_TEMP] = temp_opts
             sensors.append(temp_sensor_obj)
 
-    return (sensors, sensors_opts) if not err else (None, None)
+    if not err:
+        assert isinstance(sensors[0], GlobalRefresh)
+        return (sensors, sensors_opts)
+    return (None, None)
 
 
-def update_sensors(config, sensors, slept_time=0):  # -> sleep_interval
+def update_sensors(config: SysMonMQ, sensors: List[Sensor], slept_time=0) -> int:
     """Update list of sensors, calculate time to next refresh."""
     assert mqtt_is_connected()
 
     sleep_interval = config.refresh_interval
     if is_debug_level(8):
-        _LOGGER.debug("update_sensors(force_check=%s)", config.force_check)
+        _LOGGER.debug("update_sensors(slept_time=%d)", slept_time)
     for sensor in sensors:
-        ## Refresh sensors if refresh_interval is set
+        ## Refresh sensor only if refresh_interval is > 0
         refresh_interval = sensor.refresh_interval
         if issubclass(type(sensor), Sensor):
             sensor.refresh_countdown -= slept_time
-            if config.force_check or (
-                refresh_interval > 0 and sensor.refresh_countdown <= 0
-            ):
+            if refresh_interval > 0 and sensor.refresh_countdown <= 0:
+                if is_debug_level(8):
+                    _LOGGER.debug(
+                        "updating sensor %s (refresh_countdown=%d)",
+                        type(sensor).__name__,
+                        sensor.refresh_countdown,
+                    )
                 sensor.update()
                 sensor.refresh_countdown = refresh_interval
+                sensor.force_refresh = False
             if refresh_interval > 0 and sleep_interval > sensor.refresh_countdown:
                 sleep_interval = sensor.refresh_countdown
         else:
-            _LOGGER.warning("skipping update for %s", type(sensor).__name__)
-    config.force_check = False
+            _LOGGER.warning("skipping update for object type %s", type(sensor).__name__)
     return sleep_interval
 
 
-def schedule_refresh_all_sensors(config, delay=0):
+def schedule_refresh_sensors(
+    config: SysMonMQ, sensors: List[Sensor], delay=0, force_refresh=False
+):
+    """Schedule refresh of a set of sensors."""
+    if is_debug_level(8):
+        _LOGGER.debug(
+            "schedule_refresh_sensors(delay=%d, force_refresh=%s)", delay, force_refresh
+        )
+    for sensor in sensors:
+        assert issubclass(type(sensor), Sensor)
+        if sensor.refresh_countdown > delay:
+            sensor.refresh_countdown = delay
+        if force_refresh:
+            sensor.force_refresh = True
+
+
+def schedule_refresh_all_sensors(config: SysMonMQ, delay=0, force_refresh=False):
     """Flag force refresh of all sensors on next update."""
-    sensors = config.sensors
-    assert isinstance(sensors, list) and len(sensors) >= 1
-    assert isinstance(sensors[0], GlobalRefresh)
-    sensors[0].refresh_countdown = delay  ## Flag GlobalRefresh sensor
-    config.force_check = True  ## Force next update to be full check
+    if is_debug_level(8):
+        _LOGGER.debug("schedule_refresh_all_sensors()")
+    schedule_refresh_sensors(config, config.sensors, delay, force_refresh)

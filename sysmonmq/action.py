@@ -26,7 +26,7 @@ from .config import (
     ACTION_OPTS_REQ,
     ACTION_OPTS_ALL,
 )
-from .globals import SysMonMQ, MessageEvent
+from .globals import MQTTDiscoveryEvent, SysMonMQ, MessageEvent
 from .mqtt import (
     mqtt_get_error_opts,
     mqtt_get_output_opts,
@@ -93,7 +93,7 @@ class DiscoveryStatusAction(Action):
         if is_debug_level(4):
             _LOGGER.debug("DiscoveryStatusAction: topic=%s, payload=%s", topic, payload)
         if payload == self.payload_available:
-            send_mqtt_discovery(config)
+            MQTTDiscoveryEvent()
 
 
 class CommandAction(Action):
@@ -331,5 +331,6 @@ def send_mqtt_discovery(config):
     discovery_opts = config.discovery_opts
     for sensor in config.sensors:
         sensor.publish_mqtt_discovery(discovery_opts)
-    schedule_refresh_all_sensors(config, DEF_MQTT_DISCOVERY_UPDATE_DELAY)
-    config.force_check = True
+    schedule_refresh_all_sensors(
+        config, DEF_MQTT_DISCOVERY_UPDATE_DELAY, force_refresh=True
+    )
