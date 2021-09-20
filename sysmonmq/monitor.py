@@ -115,6 +115,11 @@ class Monitor:
             ## mqtt_error not specified
             return
 
+        mqtt_error_topic = self.get_topic(
+            type_prefix=error_prefix,
+            type_suffix=error_suffix,
+        )
+
         if type(errdetail) is dict:
             ## generate JSON error object
             payload = json.dumps({"error": errmsg, **errdetail})
@@ -124,7 +129,6 @@ class Monitor:
             if errdetail:
                 payload += ": " + errdetail
 
-        mqtt_error_topic = self.get_topic(error_prefix, error_suffix)
         self.publish(
             payload,
             topic=mqtt_error_topic,

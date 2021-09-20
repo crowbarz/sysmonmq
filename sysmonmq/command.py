@@ -62,7 +62,7 @@ class Command:
                 self.err_msg = f"command returned code {self.rc}"
         except subprocess.TimeoutExpired as e:
             self.rc = 254
-            self.err_msg = "command exceeded timeout {self.timeout}s"
+            self.err_msg = f"command exceeded timeout {self.timeout}s"
         except Exception as e:
             self.rc = 255
             self.err_msg = f"error executing command: {str(e)}"
