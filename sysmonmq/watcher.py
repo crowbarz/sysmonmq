@@ -83,9 +83,10 @@ class Watcher(ABC):
     def run(self):
         """Set up watcher and run main loop."""
         try:
-            self.setup()
+            if not self.setup():
+                return
         except Exception as e:
-            _LOGGER.error("Watcher.setup() exception: %s", e)
+            _LOGGER.error("%s.setup() exception: %s", type(self).__name__, e)
             if is_debug_level(5):
                 traceback.print_exc()
             return
@@ -94,7 +95,7 @@ class Watcher(ABC):
             try:
                 rc = self.main_loop()
                 if is_debug_level(5):
-                    _LOGGER.debug("%s.main_loop() = %d", type(self).__name__, rc)
+                    _LOGGER.debug("%s.main_loop() = %s", type(self).__name__, rc)
                 if rc:
                     continue
             except Exception as e:
@@ -140,7 +141,7 @@ class FileWatcher(Watcher):
             path = Path(filename).resolve(strict=False)
             path_str = str(path)
 
-            ## Skip path
+            ## Skip path watched by this watcher
             if path_str in self.paths:
                 _LOGGER.info('path "%s" already watched, skipping', path)
                 continue
@@ -188,6 +189,7 @@ class FileWatcher(Watcher):
                 _LOGGER.error("could not watch %s: %s", parent_str, e)
                 if is_debug_level(5):
                     traceback.print_exc()
+        return self.paths  ## empty if no paths
 
     def cleanup(self):
         """Close notifier and files."""
@@ -265,29 +267,38 @@ class CommandWatcher(Watcher):
         """Run command and set up pipe."""
         if is_debug_level(5):
             _LOGGER.debug(">> CommandWatcher.setup(command=%s)", self.command)
-        self.proc = subprocess.Popen(
-            shlex.split(self.command), stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-        )
+        try:
+            self.proc = subprocess.Popen(
+                shlex.split(self.command),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        except Exception as e:
+            _LOGGER.error(f"error starting watcher command: {str(e)}")
+            self.proc = None
+            return False
+        return True
 
     def cleanup(self):
         if is_debug_level(5):
             _LOGGER.debug(">> CommandWatcher.cleanup(command=%s)", self.command)
-        with self.lock:
-            if self.timer:
-                self.timer.cancel()
-                self.timer = None
-        while self.proc.poll() is None:
-            if is_debug_level(5):
-                _LOGGER.debug("terminating child process")
-            self.proc.terminate()
-            try:
-                self.proc.wait(timeout=DEF_COMMAND_TIMEOUT)
-            except subprocess.TimeoutExpired:
+        if self.proc:
+            with self.lock:
+                if self.timer:
+                    self.timer.cancel()
+                    self.timer = None
+            while self.proc.poll() is None:
                 if is_debug_level(5):
-                    _LOGGER.debug("killing child process")
-                self.proc.kill()
-                time.sleep(1)
-        self.proc = None
+                    _LOGGER.debug("terminating child process")
+                self.proc.terminate()
+                try:
+                    self.proc.wait(timeout=DEF_COMMAND_TIMEOUT)
+                except subprocess.TimeoutExpired:
+                    if is_debug_level(5):
+                        _LOGGER.debug("killing child process")
+                    self.proc.kill()
+                    time.sleep(1)
+            self.proc = None
 
     def delayed_update(self):
         _LOGGER.debug("triggering delayed update")
