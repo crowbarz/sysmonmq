@@ -303,7 +303,7 @@ class MemoryUsageSensor(Sensor):
         entity_name = "Memory Usage"
         entity_slug = slugify(entity_name)
         entity_icon = "mdi:memory"
-        entity_unit_of_measurement = "% memory"
+        entity_unit_of_measurement = "% used"
         return {
             "sensor": {
                 entity_slug: {
@@ -367,7 +367,7 @@ class DiskUsageSensor(Sensor):
         entity_name = "Disk Usage (root)"
         entity_slug = slugify(entity_name)
         entity_icon = "mdi:harddisk"
-        entity_unit_of_measurement = "% disk"
+        entity_unit_of_measurement = "% full"
         return {
             "sensor": {
                 entity_slug: {
