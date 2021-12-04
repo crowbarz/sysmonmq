@@ -11,6 +11,7 @@ from .config import (
     OPT_CONFIG_INHERIT,
     OPT_CONFIG_REMOVE,
     OPT_DISCOVERY,
+    OPT_INCLUDE_DEVICE_NAME,
     OPT_ENTITY_TYPE,
     OPT_FORMAT_COMMAND,
     OPT_MONITORED_SERVICES,
@@ -156,11 +157,14 @@ class CommandSensor(Sensor):
         config_inherit = {}
         if OPT_CONFIG_INHERIT in discovery:
             config_inherit = discovery[OPT_CONFIG_INHERIT]
+        name = topic_prefix + display_name
+        if discovery[OPT_INCLUDE_DEVICE_NAME]:
+            name = device_name + " " + name
 
         entity_data = {
             **device_data,
             "unique_id": device_id + "_" + topic_prefix_slug + name_slug,
-            "name": device_name + " " + topic_prefix + display_name,
+            "name": name,
             "state_topic": self.get_topic(),
         }
 

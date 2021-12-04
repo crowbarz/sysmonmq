@@ -59,6 +59,7 @@ OPT_MQTT_QOS = "mqtt_qos"
 OPT_MQTT_RETAIN = "mqtt_retain"
 
 OPT_DISCOVERY = "discovery"
+OPT_INCLUDE_DEVICE_NAME = "include_device_name"
 OPT_STATUS = "status"
 OPT_PAYLOAD_AVAILABLE = "payload_available"
 
@@ -275,7 +276,7 @@ SYSTEM_SENSORS_OPTS_DEF = {
     OPT_COMMAND_TIMEOUT: None,  # inherit
 }
 SYSTEM_SENSORS_OPTS_SUB = {
-    OPT_GLOBAL_REFRESH: None, # always configured
+    OPT_GLOBAL_REFRESH: None,  # always configured
     OPT_CPU_LOAD_AVERAGE: None,
     OPT_MEMORY_USAGE: None,
     OPT_DISK_USAGE: None,
@@ -387,6 +388,7 @@ MONITORED_SERVICES_OPTS_DEF = {
     OPT_FORMAT_COMMAND: True,
     OPT_JSON_PAYLOAD: True,
     OPT_DISCOVERY: {
+        OPT_INCLUDE_DEVICE_NAME: True,
         OPT_ENTITY_TYPE: "binary_sensor",
         OPT_CONFIG_REMOVE: None,
         OPT_CONFIG_INHERIT: {
@@ -417,6 +419,7 @@ MONITORED_CONTAINERS_OPTS_DEF = {
     OPT_FORMAT_COMMAND: True,
     OPT_JSON_PAYLOAD: True,
     OPT_DISCOVERY: {
+        OPT_INCLUDE_DEVICE_NAME: True,
         OPT_ENTITY_TYPE: "binary_sensor",
         OPT_CONFIG_REMOVE: None,
         OPT_CONFIG_INHERIT: {
@@ -446,6 +449,7 @@ MONITORED_COMMANDS_OPTS_DEF = {
     OPT_MQTT_TOPIC_PREFIX: None,  # set to group key
     OPT_JSON_PAYLOAD: False,
     OPT_DISCOVERY: {
+        OPT_INCLUDE_DEVICE_NAME: True,
         OPT_ENTITY_TYPE: "sensor",
         ## 20201215 removed icon default as binary_sensor doesn't support icons
         # OPT_CONFIG_INHERIT: {
