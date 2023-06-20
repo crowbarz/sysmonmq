@@ -12,6 +12,7 @@ from .config import (
     OPT_CONFIG_REMOVE,
     OPT_DISCOVERY,
     OPT_INCLUDE_DEVICE_NAME,
+    OPT_INCLUDE_AVAILABILITY_TOPIC,
     OPT_ENTITY_TYPE,
     OPT_FORMAT_COMMAND,
     OPT_MONITORED_SERVICES,
@@ -167,6 +168,8 @@ class CommandSensor(Sensor):
             "name": name,
             "state_topic": self.get_topic(),
         }
+        if discovery[OPT_INCLUDE_AVAILABILITY_TOPIC]:
+            entity_data.update({"availability": {"topic": self.get_topic()}})
 
         if self._json_payload:
             entity_data.update(

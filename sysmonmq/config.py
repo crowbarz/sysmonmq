@@ -60,6 +60,7 @@ OPT_MQTT_RETAIN = "mqtt_retain"
 
 OPT_DISCOVERY = "discovery"
 OPT_INCLUDE_DEVICE_NAME = "include_device_name"
+OPT_INCLUDE_AVAILABILITY_TOPIC = "include_availability_topic"
 OPT_STATUS = "status"
 OPT_PAYLOAD_AVAILABLE = "payload_available"
 
@@ -375,6 +376,7 @@ COMMAND_SENSOR_OPTS_ALL = {**COMMAND_SENSOR_OPTS_DEF, **COMMAND_SENSOR_OPTS_SUB}
 
 DISCOVERY_OPTS_DEF = {
     OPT_INCLUDE_DEVICE_NAME: True,
+    OPT_INCLUDE_AVAILABILITY_TOPIC: False,
     OPT_ENTITY_TYPE: None,  # inherit
     OPT_CONFIG_REMOVE: None,  # inherit / replace_lists
     OPT_CONFIG_INHERIT: None,  # inherit

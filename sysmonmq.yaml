@@ -282,6 +282,40 @@ monitored_containers:
     commands:
       - "docker events -f 'type=container' -f 'event=create' -f 'event=die' -f 'event=restart' -f 'event=start' -f 'event=stop'"
 
+## Monitored commands definitions. Returns the output of a command.
+##
+monitored_commands:
+  ## temper temperature monitor
+  temper:
+    mqtt_retain: true
+    mqtt_topic_prefix: ""
+    json_payload: true
+    commands:
+      - name: temper
+        display_name: "Hot Press temperature"
+        status_command: "/bin/cat /run/temper"
+        discovery:
+          # include_device_name: false
+          # include_availability_topic: false
+          entity_type: sensor
+          config_inherit:
+            icon: mdi:thermometer
+            unit_of_measurement: "°C"
+            state_class: measurement
+            device_class: temperature
+            value_template: "{{ value_json['external temperature']|default(None) }}"
+            availability:
+              value_template: "{{ 'online' if 'external temperature' in value_json else 'offline' }}"
+
+    ## Watchers definition. See monitored_services section for details.
+    ## NOTE: currently it is not possible to watch the same file in more than
+    ##       one watcher, across monitored_services, monitored_containers and
+    ##       monitored_commands. One workaround is to use a command watcher to
+    ##       tail -f the file.
+    watchers:
+      # files:
+      #   - /run/temper
+
 ## Actions definitions. Execute a script or command when a message is received
 ## on a subscribed topic. Send MQTT message with output if mqtt_output is
 ## specified, and errors if mqtt_error is specified in this section or
