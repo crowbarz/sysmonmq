@@ -242,6 +242,7 @@ class CPULoadAverageSensor(Sensor):
                     "icon": cpu_load_icon,
                     "name": device_name + " " + load_1m_name,
                     "state_topic": topic,
+                    "state_class": "measurement",
                     "unit_of_measurement": cpu_load_unit_of_measurement,
                     "value_template": "{{ value_json." + load_1m_slug + "}}",
                 },
@@ -251,6 +252,7 @@ class CPULoadAverageSensor(Sensor):
                     "icon": cpu_load_icon,
                     "name": device_name + " " + load_5m_name,
                     "state_topic": topic,
+                    "state_class": "measurement",
                     "unit_of_measurement": cpu_load_unit_of_measurement,
                     "value_template": "{{ value_json." + load_5m_slug + "}}",
                 },
@@ -260,6 +262,7 @@ class CPULoadAverageSensor(Sensor):
                     "icon": cpu_load_icon,
                     "name": device_name + " " + load_15m_name,
                     "state_topic": topic,
+                    "state_class": "measurement",
                     "unit_of_measurement": cpu_load_unit_of_measurement,
                     "value_template": "{{ value_json." + load_15m_slug + "}}",
                 },
@@ -303,7 +306,7 @@ class MemoryUsageSensor(Sensor):
         entity_name = "Memory Usage"
         entity_slug = slugify(entity_name)
         entity_icon = "mdi:memory"
-        entity_unit_of_measurement = "% used"
+        entity_unit_of_measurement = "%"
         return {
             "sensor": {
                 entity_slug: {
@@ -312,6 +315,7 @@ class MemoryUsageSensor(Sensor):
                     "icon": entity_icon,
                     "name": device_name + " " + entity_name,
                     "state_topic": self.get_topic(),
+                    "state_class": "measurement",
                     "json_attributes_topic": self.get_topic(),
                     "unit_of_measurement": entity_unit_of_measurement,
                     "value_template": "{% if 'MemTotal' in value_json and 'MemAvailable' in value_json and value_json.MemTotal|int and value_json.MemAvailable|int(-1) > 0 %}{{ ((value_json.MemTotal|int-value_json.MemAvailable|int)/value_json.MemTotal|int*100)|round(2) }}{% else %}None{% endif %}",
@@ -367,7 +371,7 @@ class DiskUsageSensor(Sensor):
         entity_name = "Disk Usage (root)"
         entity_slug = slugify(entity_name)
         entity_icon = "mdi:harddisk"
-        entity_unit_of_measurement = "% full"
+        entity_unit_of_measurement = "%"
         return {
             "sensor": {
                 entity_slug: {
@@ -376,6 +380,7 @@ class DiskUsageSensor(Sensor):
                     "icon": entity_icon,
                     "name": device_name + " " + entity_name,
                     "state_topic": self.get_topic(),
+                    "state_class": "measurement",
                     "json_attributes_topic": self.get_topic(),
                     "unit_of_measurement": entity_unit_of_measurement,
                     "value_template": "{% if '/' in value_json and '1m-blocks' in value_json['/'] and 'used' in value_json['/'] and (value_json['/']['1m-blocks'])|int and value_json['/']['used']|int(-1) >= 0 %}{{ (value_json['/']['used']|int/value_json['/']['1m-blocks']|int*100)|round(2) }}{% else %}None{% endif %}",
@@ -426,6 +431,8 @@ class TemperatureSensor(Sensor):
                     "icon": entity_icon,
                     "name": device_name + " " + entity_slug,
                     "state_topic": self.get_topic(),
+                    "state_class": "measurement",
+                    "device_class": "temperature",
                     "unit_of_measurement": entity_unit_of_measurement,
                 },
             },
