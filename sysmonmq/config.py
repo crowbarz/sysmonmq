@@ -19,6 +19,8 @@ DEF_CONFIG_FILE = "/etc/sysmonmq.yaml"
 
 ## Configuration options
 OPT_DEBUG = "debug"
+OPT_SYSTEM_HOST_CLI = "system-host"
+OPT_SYSTEM_HOST = "system_host"
 OPT_DUMP_CONFIG_CLI = "dump-config"  # command line version (note dash)
 OPT_DUMP_CONFIG = "dump_config"
 OPT_CONFIG_FILE = "config"
@@ -119,6 +121,7 @@ OPT_CONFIG_INHERIT = "config_inherit"
 ## Configuration options hierarchy and defaults
 TOP_OPTS_DEF = {
     OPT_DEBUG: DEF_DEBUG,
+    OPT_SYSTEM_HOST: None,
     OPT_DUMP_CONFIG: False,
     OPT_CONFIG_FILE: DEF_CONFIG_FILE,
     OPT_REFRESH_INTERVAL: DEF_REFRESH_INTERVAL,

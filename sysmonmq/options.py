@@ -6,8 +6,11 @@ import yaml
 
 
 from .const import APP_NAME, APP_VERSION
+from .globals import SysMonMQ
 from .config import (
     OPT_DEBUG,
+    OPT_SYSTEM_HOST,
+    OPT_SYSTEM_HOST_CLI,
     OPT_CONFIG_FILE,
     OPT_DISCOVERY,
     OPT_DUMP_CONFIG,
@@ -48,6 +51,12 @@ def get_cli_options():
     """Read options on command line."""
     parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
     parser.add_argument(
+        "-c", "--" + OPT_CONFIG_FILE, action="append", help="set config file location"
+    )
+    parser.add_argument(
+        "--" + OPT_SYSTEM_HOST_CLI, action="store", help="override system hostname"
+    )
+    parser.add_argument(
         "-d",
         "--" + OPT_DEBUG,
         help="set debugging level",
@@ -61,9 +70,6 @@ def get_cli_options():
         help="dump full config and exit",
         action="store_true",
         dest=OPT_DUMP_CONFIG,
-    )
-    parser.add_argument(
-        "-c", "--" + OPT_CONFIG_FILE, action="append", help="set config file location"
     )
     parser.add_argument(
         "-v",
@@ -119,7 +125,7 @@ def get_config_options(opts):  # -> opts
     return opts
 
 
-def parse_opts(config):  # -> top_opts
+def parse_opts(config: SysMonMQ):  # -> top_opts
     """Parse configuration options."""
     assert config.sensors == [] and config.actions == [] and config.watchers == []
 
@@ -142,6 +148,10 @@ def parse_opts(config):  # -> top_opts
     merge(top_opts, without_keys(opts, TOP_OPTS_SUB_ALL))
     configure_debug(top_opts, config)
     config.refresh_interval = top_opts[OPT_REFRESH_INTERVAL]
+
+    ## Override system hostname
+    if top_opts[OPT_SYSTEM_HOST]:
+        config.hostname = top_opts[OPT_SYSTEM_HOST]
 
     ## Set MQTT prefix
     if top_opts[OPT_MQTT_PREFIX_HOST]:
