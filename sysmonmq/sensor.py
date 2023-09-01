@@ -420,6 +420,7 @@ class TemperatureSensor(Sensor):
 
     def get_mqtt_discovery_config(self, device_name, device_id, device_data):
         """Temperature sensor Home Assistant MQTT discovery config."""
+        entity_name = "CPU Temperature"
         entity_slug = "cpu_temperature"
         entity_icon = "mdi:thermometer"
         entity_unit_of_measurement = "°C"
@@ -429,7 +430,7 @@ class TemperatureSensor(Sensor):
                     **device_data,
                     "unique_id": device_id + "_" + entity_slug,
                     "icon": entity_icon,
-                    "name": device_name + " " + entity_slug,
+                    "name": device_name + " " + entity_name,
                     "state_topic": self.get_topic(),
                     "state_class": "measurement",
                     "device_class": "temperature",
