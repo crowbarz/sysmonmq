@@ -31,7 +31,7 @@ setuptools.setup(
     install_requires=[
         "inotify-simple==1.3.5",
         "paho-mqtt==1.5.1",
-        "pyyaml==5.4.1",
+        "pyyaml==6.0.1",
         "python-slugify==4.0.1",
     ],
     entry_points={
