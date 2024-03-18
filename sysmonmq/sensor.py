@@ -19,6 +19,7 @@ from .config import (
     OPT_MQTT_ERROR,
     OPT_MQTT_OUTPUT,
     OPT_MQTT_PREFIX,
+    OPT_INCLUDE_DEVICE_NAME,
     OPT_REFRESH_INTERVAL,
     OPT_SYSTEM_SENSORS,
     OPT_CPU_LOAD_AVERAGE,
@@ -176,12 +177,15 @@ class MQTTClientSensor(Sensor):
         entity_slug = slugify(entity_name)
         birth_topic = self.get_topic()
         close_msg = self._client_opts[OPT_CLOSE]
+        name = entity_name
+        if self._client_opts[OPT_INCLUDE_DEVICE_NAME]:
+            name = device_name + " " + name
         return {
             "binary_sensor": {
                 entity_slug: {
                     "device": device_data["device"],  ## exclude availability
                     "unique_id": device_id + "_" + entity_slug,
-                    "name": device_name + " " + entity_name,
+                    "name": name,
                     "state_topic": birth_topic,
                     "device_class": "connectivity",
                     "payload_on": self._payload_birth,
@@ -198,6 +202,7 @@ class CPULoadAverageSensor(Sensor):
         super().__init__(opts, config)
         self._cpu_load_format = opts[OPT_CPU_LOAD_FORMAT]
         self._cpu_load_file = opts[OPT_CPU_LOAD_FILE]
+        self._include_device_name = opts[OPT_INCLUDE_DEVICE_NAME]
 
     def update(self):
         """Update CPU load average sensor."""
@@ -230,6 +235,10 @@ class CPULoadAverageSensor(Sensor):
         load_1m_name = "CPU Load (1m)"
         load_5m_name = "CPU Load (5m)"
         load_15m_name = "CPU Load (15m)"
+        if self._include_device_name:
+            load_1m_name = device_name + " " + load_1m_name
+            load_5m_name = device_name + " " + load_5m_name
+            load_15m_name = device_name + " " + load_15m_name
         load_1m_slug = slugify(load_1m_name)
         load_5m_slug = slugify(load_5m_name)
         load_15m_slug = slugify(load_15m_name)
@@ -240,7 +249,7 @@ class CPULoadAverageSensor(Sensor):
                     **device_data,
                     "unique_id": device_id + "_" + load_1m_slug,
                     "icon": cpu_load_icon,
-                    "name": device_name + " " + load_1m_name,
+                    "name": load_1m_name,
                     "state_topic": topic,
                     "state_class": "measurement",
                     "unit_of_measurement": cpu_load_unit_of_measurement,
@@ -250,7 +259,7 @@ class CPULoadAverageSensor(Sensor):
                     **device_data,
                     "unique_id": device_id + "_" + load_5m_slug,
                     "icon": cpu_load_icon,
-                    "name": device_name + " " + load_5m_name,
+                    "name": load_5m_name,
                     "state_topic": topic,
                     "state_class": "measurement",
                     "unit_of_measurement": cpu_load_unit_of_measurement,
@@ -260,7 +269,7 @@ class CPULoadAverageSensor(Sensor):
                     **device_data,
                     "unique_id": device_id + "_" + load_15m_slug,
                     "icon": cpu_load_icon,
-                    "name": device_name + " " + load_15m_name,
+                    "name": load_15m_name,
                     "state_topic": topic,
                     "state_class": "measurement",
                     "unit_of_measurement": cpu_load_unit_of_measurement,
@@ -277,6 +286,7 @@ class MemoryUsageSensor(Sensor):
         super().__init__(opts, config)
         self._memory_usage_file = opts[OPT_MEMORY_USAGE_FILE]
         self._metrics_filter = opts[OPT_MEMORY_USAGE_METRICS]
+        self._include_device_name = opts[OPT_INCLUDE_DEVICE_NAME]
 
     def update(self):
         """Update memory usage sensor."""
@@ -307,13 +317,16 @@ class MemoryUsageSensor(Sensor):
         entity_slug = slugify(entity_name)
         entity_icon = "mdi:memory"
         entity_unit_of_measurement = "%"
+        name = entity_name
+        if self._include_device_name:
+            name = device_name + " " + name
         return {
             "sensor": {
                 entity_slug: {
                     **device_data,
                     "unique_id": device_id + "_" + entity_slug,
                     "icon": entity_icon,
-                    "name": device_name + " " + entity_name,
+                    "name": name,
                     "state_topic": self.get_topic(),
                     "state_class": "measurement",
                     "json_attributes_topic": self.get_topic(),
@@ -330,6 +343,7 @@ class DiskUsageSensor(Sensor):
     def __init__(self, opts: dict, config: SysMonMQ):
         super().__init__(opts, config)
         self._disk_usage_command = opts[OPT_DISK_USAGE_COMMAND]
+        self._include_device_name = opts[OPT_INCLUDE_DEVICE_NAME]
 
     def update(self):
         """Update disk usage sensor."""
@@ -372,13 +386,16 @@ class DiskUsageSensor(Sensor):
         entity_slug = slugify(entity_name)
         entity_icon = "mdi:harddisk"
         entity_unit_of_measurement = "%"
+        name = entity_name
+        if self._include_device_name:
+            name = device_name + " " + name
         return {
             "sensor": {
                 entity_slug: {
                     **device_data,
                     "unique_id": device_id + "_" + entity_slug,
                     "icon": entity_icon,
-                    "name": device_name + " " + entity_name,
+                    "name": name,
                     "state_topic": self.get_topic(),
                     "state_class": "measurement",
                     "json_attributes_topic": self.get_topic(),
@@ -395,6 +412,7 @@ class TemperatureSensor(Sensor):
     def __init__(self, opts: dict, config: SysMonMQ):
         super().__init__(opts, config)
         self._temp_sensor_file = opts[OPT_TEMP_SENSOR_FILE]
+        self._include_device_name = opts[OPT_INCLUDE_DEVICE_NAME]
         self.current_temp = 0
 
     def update(self):
@@ -424,13 +442,16 @@ class TemperatureSensor(Sensor):
         entity_slug = "cpu_temperature"
         entity_icon = "mdi:thermometer"
         entity_unit_of_measurement = "°C"
+        name = entity_name
+        if self._include_device_name:
+            name = device_name + " " + name
         return {
             "sensor": {
                 entity_slug: {
                     **device_data,
                     "unique_id": device_id + "_" + entity_slug,
                     "icon": entity_icon,
-                    "name": device_name + " " + entity_name,
+                    "name": name,
                     "state_topic": self.get_topic(),
                     "state_class": "measurement",
                     "device_class": "temperature",

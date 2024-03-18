@@ -43,6 +43,10 @@ mqtt:
     #   qos: 1
     #   retain: true
 
+    ## Include device name in system sensor names. Set to false for HA versions
+    ## that automatically prepend the device name to sensor names.
+    # include_device_name: false
+
     ## These settings are used to override global settings for application
     ## level output and error messages.
     # mqtt_output:
@@ -93,6 +97,10 @@ system_sensors:
   ## update that is triggered after 3600s (60 min).
   # global_refresh:
   #   refresh_interval: 3600
+
+  ## Include device name in system sensor names. Set to false for HA versions
+  ## that automatically prepend the device name to sensor names.
+  # include_device_name: false
 
   ## Enable MQTT load average messages with 1m, 5m and 15m average load as
   ## computed by the underlying system. If enabled, all average load values are
@@ -190,6 +198,9 @@ monitored_services:
   #     payload_on: "True" # NOTE: YAML special values must be quoted 
   #     payload_off: "False"
   #     value_template: "{{ value_json.status != 'active' }}"
+  #     ## Include device name in system sensor names. Set to false for HA
+  #     ## versions that automatically prepend the device name to sensor names.
+  #     include_device_name: false
 
   ## Service definitions. 
   # services:
@@ -253,6 +264,9 @@ monitored_containers:
   #     payload_on: "True" # NOTE: YAML special values must be quoted 
   #     payload_off: "False"
   #     value_template: "{{ value_json.status != 'active' }}"
+  #     ## Include device name in system sensor names. Set to false for HA
+  #     ## versions that automatically prepend the device name to sensor names.
+  #     include_device_name: false
 
   ## Container definitions.
   #   - name: "zoneminder"
@@ -295,6 +309,8 @@ monitored_commands:
         display_name: "Hot Press temperature"
         status_command: "/bin/cat /run/temper"
         discovery:
+          ## Include device name in system sensor names. Set to false for HA
+          ## versions that automatically prepend the device name to sensor names.
           # include_device_name: false
           # include_availability_topic: false
           entity_type: sensor

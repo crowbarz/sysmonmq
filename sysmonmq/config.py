@@ -218,6 +218,7 @@ MQTT_OPTS_DEF = {
             OPT_QOS: None,  # inherit
             OPT_RETAIN: None,  # inherit
         },
+        OPT_INCLUDE_DEVICE_NAME: False,
     },
     OPT_STATUS: MQTT_STATUS_OPTS_DEF,
 }
@@ -264,6 +265,7 @@ SYSTEM_SENSOR_OPTS_DEF = {
     OPT_REFRESH_INTERVAL: None,  # inherit
     OPT_MQTT_QOS: None,  # inherit
     OPT_MQTT_RETAIN: None,  # inherit
+    OPT_INCLUDE_DEVICE_NAME: None,  # inherit
 }
 SYSTEM_SENSOR_OPTS_SUB = {
     OPT_MQTT_OUTPUT: None,
@@ -278,6 +280,7 @@ SYSTEM_SENSORS_OPTS_DEF = {
     OPT_MQTT_RETAIN: DEF_MQTT_RETAIN,
     OPT_REFRESH_INTERVAL: None,  # inherit
     OPT_COMMAND_TIMEOUT: None,  # inherit
+    OPT_INCLUDE_DEVICE_NAME: False,
 }
 SYSTEM_SENSORS_OPTS_SUB = {
     OPT_GLOBAL_REFRESH: None,  # always configured
@@ -378,7 +381,7 @@ COMMAND_SENSOR_OPTS_REQ = [OPT_NAME]
 COMMAND_SENSOR_OPTS_ALL = {**COMMAND_SENSOR_OPTS_DEF, **COMMAND_SENSOR_OPTS_SUB}.keys()
 
 DISCOVERY_OPTS_DEF = {
-    OPT_INCLUDE_DEVICE_NAME: True,
+    OPT_INCLUDE_DEVICE_NAME: None,  # inherit
     OPT_INCLUDE_AVAILABILITY_TOPIC: False,
     OPT_ENTITY_TYPE: None,  # inherit
     OPT_CONFIG_REMOVE: None,  # inherit / replace_lists
@@ -394,7 +397,7 @@ MONITORED_SERVICES_OPTS_DEF = {
     OPT_FORMAT_COMMAND: True,
     OPT_JSON_PAYLOAD: True,
     OPT_DISCOVERY: {
-        OPT_INCLUDE_DEVICE_NAME: True,
+        OPT_INCLUDE_DEVICE_NAME: False,
         OPT_ENTITY_TYPE: "binary_sensor",
         OPT_CONFIG_REMOVE: None,
         OPT_CONFIG_INHERIT: {
@@ -425,7 +428,7 @@ MONITORED_CONTAINERS_OPTS_DEF = {
     OPT_FORMAT_COMMAND: True,
     OPT_JSON_PAYLOAD: True,
     OPT_DISCOVERY: {
-        OPT_INCLUDE_DEVICE_NAME: True,
+        OPT_INCLUDE_DEVICE_NAME: False,
         OPT_ENTITY_TYPE: "binary_sensor",
         OPT_CONFIG_REMOVE: None,
         OPT_CONFIG_INHERIT: {
@@ -455,7 +458,7 @@ MONITORED_COMMANDS_OPTS_DEF = {
     OPT_MQTT_TOPIC_PREFIX: None,  # set to group key
     OPT_JSON_PAYLOAD: False,
     OPT_DISCOVERY: {
-        OPT_INCLUDE_DEVICE_NAME: True,
+        OPT_INCLUDE_DEVICE_NAME: False,
         OPT_ENTITY_TYPE: "sensor",
         ## 20201215 removed icon default as binary_sensor doesn't support icons
         # OPT_CONFIG_INHERIT: {
