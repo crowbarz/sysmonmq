@@ -37,7 +37,7 @@ _LOGGER = logging.getLogger(APP_NAME)
 
 
 class Watcher(ABC):
-    """Watch sensor update triggers asynchronusly and trigger updates. """
+    """Watch sensor update triggers asynchronusly and trigger updates."""
 
     def __init__(self, opts, sensors=[], thread_id=None):
         if is_debug_level(5):
@@ -223,7 +223,7 @@ class FileWatcher(Watcher):
                 for flag in inotify.flags.from_mask(mask):
                     flags += separator + str(flag)
                     separator = ", "
-                _LOGGER.debug("Event(%s, [%s], %s, %s", wd, flags, cookie, name)
+                _LOGGER.debug("Event(%s, [%s], %s, %s)", wd, flags, cookie, name)
             (filename, f) = self.wds[wd]
             if mask & DEF_INOTIFY_FLAGS_UPDATE:
                 if self.keywords:
